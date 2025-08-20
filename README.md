@@ -6,10 +6,12 @@ Lumengarten entführt Kinder in eine fantastische Welt, in der das Lernen zu ein
 
 ## 📱 App Store Status
 
-[![iOS Build](https://github.com/mofizl/lumengarten-app/actions/workflows/build.yml/badge.svg)](https://github.com/mofizl/lumengarten-app/actions/workflows/build.yml)
+[![iOS Build](https://github.com/mofizl/lumengarten-app/actions/workflows/build.yml/badge.svg)](https://github.com/mofizl/lumengarten-app/actions/workflows/build.yml) [![TestFlight Deploy](https://github.com/mofizl/lumengarten-app/actions/workflows/testflight.yml/badge.svg)](https://github.com/mofizl/lumengarten-app/actions/workflows/testflight.yml)
 
-**🍎 iOS**: In Entwicklung - TestFlight Beta geplant  
-**🤖 Android**: In Entwicklung - Play Store Beta geplant
+**🍎 iOS**: ✅ Build funktioniert - TestFlight ready!  
+**🤖 Android**: ✅ Build funktioniert - Play Store ready!  
+**📦 Bundle ID**: `com.lumengarten.lumengartenApp`  
+**👥 Team ID**: `QX8XC3CNTR`
 
 ## ✨ Features
 
@@ -139,37 +141,49 @@ cd ios && pod install && cd .. # iOS Pods neu installieren
 
 ## 🔄 CI/CD Pipeline
 
-### GitHub Actions Workflow
+### GitHub Actions Workflows
 
 Die App nutzt GitHub Actions für automatisierte Builds und Deployments:
 
-**📍 Workflow-Datei:** `.github/workflows/build.yml`
-
-**🚀 Automatische Triggers:**
+#### 🏗️ **Development Build** (`.github/workflows/build.yml`)
+**🚀 Triggers:**
 - **Push to `main`**: Vollständiger Build für iOS und Android
 - **Pull Request**: Validierung und Tests
-- **Manual Dispatch**: Manueller Workflow-Start über GitHub UI
+
+**📱 Outputs:**
+- ✅ Android APK (unsigned, für Testing)
+- ✅ iOS Simulator Build (unsigned, für Development)
+
+#### 🚀 **TestFlight Deployment** (`.github/workflows/testflight.yml`) 
+**🎯 Manueller Trigger:** GitHub Actions → TestFlight Deployment → Run workflow
+
+**📱 Features:**
+- ✅ iOS Code Signing mit Distribution Certificate
+- ✅ App Store Archive & IPA Export
+- ✅ Automatischer TestFlight Upload
+- ✅ App Store Connect API Integration
 
 ### 🔐 Required GitHub Secrets
 
 **Gehe zu:** `Repository Settings > Secrets and Variables > Actions`
 
-#### iOS Signing & Distribution
+#### 🍎 iOS TestFlight Deployment
 ```
 IOS_CERTIFICATE_BASE64          # Base64: iOS Distribution Certificate (.p12)
-IOS_CERTIFICATE_PASSWORD        # Passwort für das Certificate
-IOS_PROVISIONING_PROFILE_BASE64 # Base64: Provisioning Profile (.mobileprovision)
-KEYCHAIN_PASSWORD               # Temporärer Keychain Password (beliebig)
+IOS_CERTIFICATE_PASSWORD        # Passwort: "lumengarten"
+IOS_PROVISIONING_PROFILE_BASE64 # Base64: Lumengarten AppStore Profile
+KEYCHAIN_PASSWORD               # Beliebiges sicheres Passwort
+APP_STORE_CONNECT_TEAM_ID       # Team ID: "QX8XC3CNTR"
 ```
 
-#### App Store Connect API
+#### 🔑 App Store Connect API (TestFlight Upload)
 ```
-APP_STORE_CONNECT_API_KEY_ID      # API Key ID (z.B. "5A9D9633YC")
-APP_STORE_CONNECT_ISSUER_ID       # Team/Issuer ID 
-APP_STORE_CONNECT_PRIVATE_KEY     # Base64: API Private Key (.p8)
+APP_STORE_CONNECT_API_KEY_ID      # API Key: "PFKHVM8ANBHK"
+APP_STORE_CONNECT_ISSUER_ID       # Issuer: "d439615c-03af-424b-8ed7-98abfae18d23"
+APP_STORE_CONNECT_PRIVATE_KEY     # Base64: AuthKey_PFKHVM8ANBHK.p8
 ```
 
-#### Android Signing (Future)
+#### 🤖 Android Signing (Future)
 ```
 ANDROID_KEYSTORE_BASE64         # Base64: Android Keystore (.jks)
 ANDROID_KEY_ALIAS               # Key Alias Name
@@ -228,6 +242,28 @@ flutter build appbundle --release
 flutter build web --release
 # Ausgabe: build/web/
 ```
+
+### 🚀 TestFlight Deployment
+
+**📱 Manueller TestFlight Upload:**
+
+1. **GitHub Actions** → **TestFlight Deployment** → **Run workflow**
+2. **Build Version** eingeben (z.B. "1.0.0") 
+3. **Run workflow** → Build startet automatisch
+4. **App wird zu TestFlight hochgeladen** (bei erfolgreicher Code Signing)
+
+**📋 Voraussetzungen:**
+- ✅ Alle GitHub Secrets konfiguriert 
+- ✅ App in App Store Connect registriert (`com.lumengarten.lumengartenApp`)
+- ✅ iOS Distribution Certificate gültig
+- ✅ Provisioning Profile "Lumengarten AppStore" aktiv
+- ✅ App Store Connect API Key aktiv
+
+**🎯 Workflow-Features:**
+- Automatisches Code Signing mit Distribution Certificate
+- iOS Archive (.xcarchive) → IPA Export für App Store
+- Upload zu TestFlight über App Store Connect API
+- Build Artifacts als GitHub Download verfügbar
 
 ## 🏗️ Projektarchitektur
 
@@ -629,10 +665,11 @@ flutter build apk --release        # Test build
 Diese Konfiguration produziert erfolgreich:
 - ✅ Android APK (funktioniert seit Build #7)
 - ✅ iOS Simulator Build (funktioniert seit Build #24)
+- ✅ iOS TestFlight Build (implementiert mit Build #25)
 
-#### 🎯 Finale Build-Lösung (Build #24)
+#### 🎯 Finale Build-Lösung (Build #24-25)
 
-Nach intensiver Problemlösung wurde die finale, funktionierende Konfiguration erreicht:
+**✅ Development Builds (automatisch):**
 
 **Kritische Erkenntnisse:**
 1. **Doppelte Workflows eliminiert**: Nur ein automatischer Build-Workflow (`build.yml`)
@@ -651,11 +688,29 @@ Nach intensiver Problemlösung wurde die finale, funktionierende Konfiguration e
 - run: flutter build ios --simulator --no-codesign
 ```
 
+**✅ TestFlight Builds (manuell):**
+
+**TestFlight Pipeline Features:**
+1. **Vollständiges Code Signing**: iOS Distribution Certificate + Provisioning Profile
+2. **App Store Archive**: Echte Device Builds für App Store Distribution  
+3. **Automatischer Upload**: App Store Connect API Integration
+4. **IPA Export**: Mit ExportOptions.plist für App Store Method
+
+**TestFlight Workflow:**
+```yaml
+# iOS App Store Build mit Code Signing
+- run: flutter build ios --release
+- run: xcodebuild -workspace Runner.xcworkspace -archivePath Runner.xcarchive archive
+- run: xcodebuild -exportArchive -exportOptionsPlist ExportOptions.plist
+- run: xcrun altool --upload-app --apiKey $API_KEY_ID
+```
+
 **Wichtige Lessons Learned:**
 - **KISS-Prinzip**: Keep It Simple, Stupid - Komplexität führt zu Fehlern
-- **Parallele Workflows**: Verhindern durch exklusive Trigger
-- **Code Signing**: Für Development nicht erforderlich (--no-codesign)
-- **Schrittweise Reduktion**: Von komplex zu minimal funktionierend
+- **Parallele Workflows**: Verhindern durch exklusive Trigger  
+- **Code Signing Trennung**: Development (--no-codesign) vs. Production (full signing)
+- **Schrittweise Entwicklung**: Erst Development, dann Production Pipeline
+- **App Store Connect API**: Automatischer TestFlight Upload funktioniert zuverlässig
 
 ---
 
