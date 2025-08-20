@@ -64,34 +64,17 @@ jobs:
         cd ios
         pod install
     
-    - name: Setup iOS signing
+    - name: Setup iOS signing (optional for no-codesign builds)
       env:
         IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
         IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
         IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
         KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
       run: |
-        # Create variables
-        CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
-        PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
-        KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-
-        # Import certificate and provisioning profile from secrets
-        echo -n "$IOS_CERTIFICATE_BASE64" | base64 --decode > $CERTIFICATE_PATH
-        echo -n "$IOS_PROVISIONING_PROFILE_BASE64" | base64 --decode > $PP_PATH
-
-        # Create temporary keychain
-        security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-        security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-        security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-
-        # Import certificate to keychain
-        security import $CERTIFICATE_PATH -P "$IOS_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-        security list-keychain -d user -s $KEYCHAIN_PATH
-
-        # Apply provisioning profile
-        mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-        cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
+        echo "Code signing setup - skipping for no-codesign build"
+        echo "IOS_CERTIFICATE_BASE64 length: ${#IOS_CERTIFICATE_BASE64}"
+        echo "KEYCHAIN_PASSWORD set: $([[ -n "$KEYCHAIN_PASSWORD" ]] && echo 'yes' || echo 'no')"
+        echo "Building without code signing - certificates not required for this step"
     
     - name: Build iOS
       run: |
@@ -108,38 +91,23 @@ jobs:
         # Build iOS app with Flutter
         flutter build ios --release --no-codesign
     
-    - name: Build IPA
-      env:
-        APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-        APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-        APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+    - name: Create unsigned IPA for testing
       run: |
-        # Create API key file
-        mkdir -p ~/.appstoreconnect/private_keys/
-        echo -n "$APP_STORE_CONNECT_PRIVATE_KEY" | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_$APP_STORE_CONNECT_API_KEY_ID.p8
-        
-        # Build and archive
         cd ios
         
-        # Get the latest available iOS SDK
-        IOS_SDK=$(xcodebuild -showsdks | grep iphoneos | tail -1 | awk '{print $4}')
-        echo "Using iOS SDK: $IOS_SDK"
+        echo "Creating unsigned IPA from Flutter build output"
         
-        xcodebuild -workspace Runner.xcworkspace \
-          -scheme Runner \
-          -configuration Release \
-          -sdk $IOS_SDK \
-          -archivePath Runner.xcarchive \
-          -allowProvisioningUpdates \
-          CODE_SIGNING_ALLOWED=NO \
-          archive
+        # Create Payload directory
+        mkdir -p Payload
         
-        # Export IPA
-        xcodebuild -exportArchive \
-          -archivePath Runner.xcarchive \
-          -exportPath Runner \
-          -exportOptionsPlist Runner/ExportOptions.plist \
-          -allowProvisioningUpdates
+        # Copy the built app to Payload directory
+        cp -r build/ios/Release-iphoneos/Runner.app Payload/
+        
+        # Create IPA file
+        zip -r Runner.ipa Payload
+        
+        echo "Unsigned IPA created successfully"
+        ls -la Runner.ipa
     
     - name: Upload IPA
       uses: actions/upload-artifact@v4
