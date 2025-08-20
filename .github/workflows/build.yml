@@ -77,6 +77,8 @@ jobs:
         echo "Building without code signing - certificates not required for this step"
     
     - name: Build iOS
+      env:
+        IPHONEOS_DEPLOYMENT_TARGET: '12.0'
       run: |
         # List available SDKs
         xcodebuild -showsdks | grep iphoneos
@@ -85,10 +87,18 @@ jobs:
         IOS_SDK=$(xcodebuild -showsdks | grep iphoneos | tail -1 | awk '{print $4}')
         echo "Using iOS SDK: $IOS_SDK"
         
-        # Set the iOS SDK environment variable for Flutter
-        export FLUTTER_XCODE_IPHONEOS_DEPLOYMENT_TARGET=12.0
+        # Set deployment target for Flutter
+        export IPHONEOS_DEPLOYMENT_TARGET=12.0
         
-        # Build iOS app with Flutter
+        # Force Flutter to use specific iOS version
+        cd ios
+        
+        # Replace any iOS version references in project settings
+        sed -i.bak 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*/IPHONEOS_DEPLOYMENT_TARGET = 12.0/g' Runner.xcodeproj/project.pbxproj
+        
+        cd ..
+        
+        # Now try Flutter build with deployment target set
         flutter build ios --release --no-codesign
     
     - name: Create unsigned IPA for testing
