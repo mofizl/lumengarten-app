@@ -64,54 +64,7 @@ jobs:
         cd ios
         pod install
     
-    - name: Setup iOS signing for TestFlight
-      env:
-        IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
-        IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
-        IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
-        KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
-        APP_STORE_CONNECT_TEAM_ID: ${{ secrets.APP_STORE_CONNECT_TEAM_ID }}
-      run: |
-        # Create variables
-        CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
-        PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
-        KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-
-        # Import certificate and provisioning profile from secrets
-        echo -n "$IOS_CERTIFICATE_BASE64" | base64 --decode > $CERTIFICATE_PATH
-        echo -n "$IOS_PROVISIONING_PROFILE_BASE64" | base64 --decode > $PP_PATH
-
-        # Create temporary keychain
-        security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-        security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-        security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-        security set-keychain-settings -t 21600 -u $KEYCHAIN_PATH
-
-        # Import certificate to keychain
-        security import $CERTIFICATE_PATH -P "$IOS_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-        security list-keychain -d user -s $KEYCHAIN_PATH
-
-        # Apply provisioning profile
-        mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-        cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
-        
-        # Get provisioning profile UUID and name
-        PP_UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" /dev/stdin <<< $(security cms -D -i $PP_PATH))
-        PP_NAME=$(/usr/libexec/PlistBuddy -c "Print :Name" /dev/stdin <<< $(security cms -D -i $PP_PATH))
-        echo "PROVISIONING_PROFILE_UUID=$PP_UUID" >> $GITHUB_ENV
-        echo "PROVISIONING_PROFILE_NAME=$PP_NAME" >> $GITHUB_ENV
-    
-    - name: Prepare Flutter iOS files
-      run: |
-        echo "Generating Flutter engine and dependencies..."
-        # Skip flutter build commands that require iOS 18 - use direct compilation
-        flutter packages get
-        flutter packages pub run build_runner build --delete-conflicting-outputs || echo "No build runner configured"
-    
-    - name: Build and Archive iOS for TestFlight
-      env:
-        IPHONEOS_DEPLOYMENT_TARGET: '12.0'
-        APP_STORE_CONNECT_TEAM_ID: ${{ secrets.APP_STORE_CONNECT_TEAM_ID }}
+    - name: Build iOS (No Code Signing)
       run: |
         # List available SDKs
         xcodebuild -showsdks | grep iphoneos
@@ -125,65 +78,19 @@ jobs:
         # Ensure deployment target is set correctly  
         sed -i.bak 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*/IPHONEOS_DEPLOYMENT_TARGET = 12.0/g' Runner.xcodeproj/project.pbxproj
         
-        # Update ExportOptions.plist with actual values
-        sed -i.bak "s/\$(APP_STORE_CONNECT_TEAM_ID)/$APP_STORE_CONNECT_TEAM_ID/g" Runner/ExportOptions.plist
-        sed -i.bak "s/\$(PROVISIONING_PROFILE_NAME)/$PROVISIONING_PROFILE_NAME/g" Runner/ExportOptions.plist
-        
-        # Archive with proper code signing for App Store
+        # Build for simulator (no code signing required)
         xcodebuild -workspace Runner.xcworkspace \
           -scheme Runner \
           -configuration Release \
-          -sdk $IOS_SDK \
-          -archivePath Runner.xcarchive \
-          IPHONEOS_DEPLOYMENT_TARGET=12.0 \
-          DEVELOPMENT_TEAM=$APP_STORE_CONNECT_TEAM_ID \
-          PROVISIONING_PROFILE_SPECIFIER=$PROVISIONING_PROFILE_UUID \
-          archive
-        
-        # Export IPA for App Store
-        xcodebuild -exportArchive \
-          -archivePath Runner.xcarchive \
-          -exportPath . \
-          -exportOptionsPlist Runner/ExportOptions.plist
-    
-    - name: Upload to TestFlight
-      env:
-        APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-        APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-        APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
-      run: |
-        cd ios
-        
-        # Find the exported IPA
-        IPA_PATH=$(find . -name "*.ipa" | head -1)
-        
-        if [ -n "$IPA_PATH" ]; then
-          echo "Found IPA at: $IPA_PATH"
-          ls -la "$IPA_PATH"
+          -sdk iphonesimulator \
+          -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+          build
           
-          # Create App Store Connect API key
-          mkdir -p ~/.appstoreconnect/private_keys/
-          echo -n "$APP_STORE_CONNECT_PRIVATE_KEY" | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_$APP_STORE_CONNECT_API_KEY_ID.p8
-          
-          # Upload to TestFlight using xcrun altool
-          xcrun altool --upload-app \
-            --type ios \
-            --file "$IPA_PATH" \
-            --apiKey "$APP_STORE_CONNECT_API_KEY_ID" \
-            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID" \
-            --verbose
-            
-          echo "Successfully uploaded to TestFlight!"
-        else
-          echo "No IPA file found for upload"
-          find . -name "*.ipa" -o -name "*Runner*" | head -10
-        fi
+        echo "iOS build completed successfully!"
     
-    - name: Upload IPA Artifact
+    - name: Upload build logs
       uses: actions/upload-artifact@v4
       with:
-        name: ios-testflight-ready
-        path: |
-          ios/*.ipa
-          ios/**/*.ipa
+        name: ios-build-logs
+        path: ios/build/
         if-no-files-found: warn
