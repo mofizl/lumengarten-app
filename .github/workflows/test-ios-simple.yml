@@ -1,0 +1,92 @@
+name: Test iOS Build Simple
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ test-ios ]
+
+jobs:
+  test-ios-build:
+    runs-on: macos-14
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Check Xcode versions available
+      run: |
+        echo "Available Xcode versions:"
+        ls /Applications/ | grep Xcode
+        
+    - name: Select and verify Xcode
+      run: |
+        sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+        echo "Selected Xcode path: $(xcode-select -p)"
+        xcodebuild -version
+        
+    - name: Show available iOS SDKs
+      run: |
+        echo "Available iOS SDKs:"
+        xcodebuild -showsdks | grep iphoneos
+        
+    - name: Check iOS Simulators
+      run: |
+        echo "Available iOS Simulators:"
+        xcrun simctl list devices | grep "iPhone"
+        
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.3'
+        channel: 'stable'
+    
+    - name: Verify Flutter installation
+      run: |
+        flutter --version
+        flutter doctor -v
+        
+    - name: Get dependencies
+      run: flutter pub get
+    
+    - name: Check iOS project structure
+      run: |
+        echo "iOS project structure:"
+        ls -la ios/
+        echo ""
+        echo "Runner project:"
+        ls -la ios/Runner/
+        
+    - name: Install and check CocoaPods
+      run: |
+        echo "CocoaPods version:"
+        pod --version
+        cd ios
+        echo "Installing CocoaPods dependencies..."
+        pod install --verbose
+        echo "Checking Podfile.lock:"
+        head -20 Podfile.lock
+        
+    - name: Verify Xcode workspace
+      run: |
+        cd ios
+        echo "Workspace contents:"
+        ls -la Runner.xcworkspace/
+        
+    - name: Basic xcodebuild test
+      run: |
+        cd ios
+        echo "Testing basic xcodebuild configuration..."
+        xcodebuild -workspace Runner.xcworkspace \
+          -scheme Runner \
+          -configuration Debug \
+          -sdk iphonesimulator \
+          -showBuildSettings | head -50
+          
+    - name: Attempt iOS Simulator build
+      run: |
+        cd ios
+        echo "Attempting iOS Simulator build..."
+        xcodebuild -workspace Runner.xcworkspace \
+          -scheme Runner \
+          -configuration Release \
+          -sdk iphonesimulator \
+          -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+          build
