@@ -41,7 +41,7 @@ class GamesPage extends StatelessWidget {
                 icon: Icons.menu_book,
                 color: AppTheme.primaryBlue,
                 onTap: () {
-                  // TODO: Navigate to reading games
+                  context.go('/games/reading');
                 },
               ),
               _buildGameAreaCard(
@@ -50,7 +50,7 @@ class GamesPage extends StatelessWidget {
                 icon: Icons.edit,
                 color: AppTheme.primaryPurple,
                 onTap: () {
-                  // TODO: Navigate to writing games
+                  context.go('/games/writing');
                 },
               ),
               _buildGameAreaCard(
@@ -59,7 +59,7 @@ class GamesPage extends StatelessWidget {
                 icon: Icons.psychology,
                 color: AppTheme.crystalBlue,
                 onTap: () {
-                  // TODO: Navigate to logic games
+                  context.go('/games/logic');
                 },
               ),
               _buildGameAreaCard(
@@ -68,7 +68,7 @@ class GamesPage extends StatelessWidget {
                 icon: Icons.calculate,
                 color: AppTheme.magicGreen,
                 onTap: () {
-                  // TODO: Navigate to math games
+                  context.go('/games/math');
                 },
               ),
             ],
