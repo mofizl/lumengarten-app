@@ -124,7 +124,7 @@ class GamesPage extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(3, (index) {
-                return Icon(
+                return const Icon(
                   Icons.star_outline,
                   color: AppTheme.starYellow,
                   size: 20,

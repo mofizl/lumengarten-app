@@ -48,10 +48,10 @@ class GardenPage extends StatelessWidget {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 10),
-                    LinearProgressIndicator(
+                    const LinearProgressIndicator(
                       value: 0.1,
                       backgroundColor: AppTheme.lightGray,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
+                      valueColor: AlwaysStoppedAnimation<Color>(
                         AppTheme.starYellow,
                       ),
                     ),
