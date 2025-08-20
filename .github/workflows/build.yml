@@ -136,4 +136,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ios-release
-        path: ios/Runner/*.ipa
+        path: |
+          ios/Runner.ipa
+          ios/*.ipa
+      if-no-files-found: warn
