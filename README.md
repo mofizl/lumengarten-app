@@ -470,6 +470,168 @@ git push origin feature/neue-funktion
 
 ---
 
+## 🔧 Troubleshooting & CI/CD Pipeline
+
+### GitHub Actions Build Issues
+
+Dieses Projekt hatte eine Reihe von Build-Problemen, die systematisch gelöst wurden. Diese Dokumentation hilft bei ähnlichen Problemen:
+
+#### 🍎 iOS Build Probleme & Lösungen
+
+**Problem 1: iOS 18.0 SDK Requirement Error**
+```
+Error: iOS 18.0 is not installed. To use with Xcode, first download and install the platform
+```
+
+**Lösung:**
+- **Ursache**: Flutter/Xcode versuchte iOS 18.0 zu verwenden, obwohl nur iOS 17.5 verfügbar war
+- **Fix**: Explizite iOS Deployment Target Kontrolle
+```yaml
+# In GitHub Actions Workflow:
+env:
+  IPHONEOS_DEPLOYMENT_TARGET: '12.0'
+run: |
+  # Force deployment target in project settings
+  sed -i.bak 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*/IPHONEOS_DEPLOYMENT_TARGET = 12.0/g' ios/Runner.xcodeproj/project.pbxproj
+  export IPHONEOS_DEPLOYMENT_TARGET=12.0
+  flutter build ios --release --no-codesign
+```
+
+**Problem 2: Main.storyboard iOS 18.0 Dependency**
+```
+Error (Xcode): iOS 18.0 Platform Not Installed.
+Failed to build iOS app
+/path/to/Main.storyboard
+```
+
+**Lösung:**
+- **Ursache**: Alte Main.storyboard mit iOS 18.0 Referenzen
+- **Fix**: Komplette Storyboard-Entfernung für Flutter Apps
+```bash
+# Entferne UIMainStoryboardFile aus Info.plist
+# Lösche Main.storyboard Datei
+# Entferne alle Referenzen aus project.pbxproj
+rm ios/Runner/Base.lproj/Main.storyboard
+```
+
+**Problem 3: CocoaPods Integration Warnung**
+```
+[!] CocoaPods did not set the base configuration of your project because your project already has a custom config set.
+```
+
+**Lösung:**
+- **Fix**: Fehlende Profile.xcconfig erstellen
+```bash
+# ios/Flutter/Profile.xcconfig
+#include "Generated.xcconfig"
+#include "Pods/Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"
+```
+
+**Problem 4: Code Signing Fehler ohne Zertifikate**
+```
+security: SecKeychainItemImport: MAC verification failed during PKCS12 import (wrong password?)
+```
+
+**Lösung:**
+- **Ursache**: Fehlende oder falsche Code Signing Secrets
+- **Fix**: Code Signing für unsigned builds umgehen
+```yaml
+# Vereinfachter Build ohne Code Signing:
+- name: Build iOS
+  run: flutter build ios --release --no-codesign
+```
+
+#### 🤖 Android Build Probleme & Lösungen
+
+**Problem 1: Dart SDK Version Inkompatibilität**
+```
+The current Dart SDK version is 3.3.0.
+Because lumengarten_app requires SDK version ^3.5.3, version solving failed.
+```
+
+**Lösung:**
+- **Ursache**: Flutter 3.19.0 hat Dart 3.3.0, aber pubspec.yaml verlangte ^3.5.3
+- **Fix**: SDK Versionen synchronisieren
+```yaml
+# pubspec.yaml
+environment:
+  sdk: ^3.5.0
+
+# GitHub Actions
+- uses: subosito/flutter-action@v2
+  with:
+    flutter-version: '3.24.3'  # Hat kompatibles Dart SDK
+```
+
+#### ⚙️ GitHub Actions Runner Optimierungen
+
+**iOS Runner Konfiguration:**
+```yaml
+build-ios:
+  runs-on: macos-14  # Bessere Xcode Support
+  steps:
+  - name: Select Xcode version
+    run: |
+      sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+      xcodebuild -version
+```
+
+**Android Runner Konfiguration:**
+```yaml
+build-android:
+  runs-on: ubuntu-latest
+  steps:
+  - name: Setup Java
+    uses: actions/setup-java@v4
+    with:
+      distribution: 'zulu'
+      java-version: '17'  # Stabil für Flutter builds
+```
+
+### 🚀 Quick Fixes für häufige Probleme
+
+#### Flutter Analyze Fehler beheben:
+```bash
+flutter analyze                    # Probleme finden
+dart format lib/ test/             # Code formatieren
+flutter pub get                    # Dependencies aktualisieren
+```
+
+#### iOS Build Probleme diagnostizieren:
+```bash
+# SDK verfügbarkeit prüfen
+xcodebuild -showsdks | grep iphoneos
+
+# Deployment Target prüfen  
+grep -r "IPHONEOS_DEPLOYMENT_TARGET" ios/
+
+# CocoaPods neu installieren
+cd ios && pod install --repo-update
+```
+
+#### Android Build Probleme diagnostizieren:
+```bash
+flutter doctor -v                  # Umgebung prüfen
+flutter clean && flutter pub get   # Clean build
+flutter build apk --release        # Test build
+```
+
+### 📋 Erfolgreich getestete Konfiguration
+
+**Funktionierende Versionen:**
+- **Flutter**: 3.24.3 (stable)
+- **Dart**: 3.5.0+
+- **Xcode**: 15.4 (auf macOS-14)
+- **Java**: 17 (Zulu Distribution)
+- **iOS Deployment Target**: 12.0+
+- **Android SDK**: API Level 21+
+
+Diese Konfiguration produziert erfolgreich:
+- ✅ Android APK (funktioniert seit Build #7)
+- ✅ iOS IPA (funktioniert seit Build #12)
+
+---
+
 **💫 Developed with ❤️ for curious minds**
 
 > Bei Fragen oder Anregungen: [GitHub Issues](https://github.com/mofizl/lumengarten-app/issues) oder kontaktiere das Entwickler-Team.
