@@ -102,20 +102,10 @@ jobs:
         # Build for iOS Simulator with explicit settings
         echo "Starting iOS Simulator build..."
         
-        # First try iPhone 15, then fallback to generic iOS Simulator
-        xcodebuild -workspace Runner.xcworkspace \
-          -scheme Runner \
-          -configuration Release \
-          -sdk iphonesimulator \
-          -destination 'generic/platform=iOS Simulator' \
-          -derivedDataPath build \
-          IPHONEOS_DEPLOYMENT_TARGET=12.0 \
-          ONLY_ACTIVE_ARCH=YES \
-          CODE_SIGN_IDENTITY="" \
-          CODE_SIGNING_REQUIRED=NO \
-          CODE_SIGNING_ALLOWED=NO \
-          build
-          
+        # Use Flutter build instead of direct xcodebuild
+        cd ..
+        flutter build ios --simulator --no-codesign --debug
+        
         echo "iOS build completed successfully!"
     
     - name: Upload build artifacts
@@ -123,6 +113,6 @@ jobs:
       with:
         name: ios-simulator-build
         path: |
-          ios/build/
+          build/ios/
           ios/Podfile.lock
         if-no-files-found: warn
