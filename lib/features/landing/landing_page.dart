@@ -25,9 +25,10 @@ class LandingPage extends StatelessWidget {
         child: SafeArea(
           child: Padding(
             padding: AppStyles.pagePadding,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
                 // App-Titel
                 Text(
                   AppConstants.appName,
@@ -98,7 +99,8 @@ class LandingPage extends StatelessWidget {
                     ),
                   ),
                 ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
