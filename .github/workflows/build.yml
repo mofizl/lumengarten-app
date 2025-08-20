@@ -76,7 +76,12 @@ jobs:
         echo "KEYCHAIN_PASSWORD set: $([[ -n "$KEYCHAIN_PASSWORD" ]] && echo 'yes' || echo 'no')"
         echo "Building without code signing - certificates not required for this step"
     
-    - name: Build iOS
+    - name: Prepare Flutter iOS files
+      run: |
+        echo "Generating Flutter iOS framework..."
+        flutter build ios-framework --release --no-codesign
+    
+    - name: Build iOS with Xcode directly
       env:
         IPHONEOS_DEPLOYMENT_TARGET: '12.0'
       run: |
@@ -87,19 +92,19 @@ jobs:
         IOS_SDK=$(xcodebuild -showsdks | grep iphoneos | tail -1 | awk '{print $4}')
         echo "Using iOS SDK: $IOS_SDK"
         
-        # Set deployment target for Flutter
-        export IPHONEOS_DEPLOYMENT_TARGET=12.0
-        
-        # Force Flutter to use specific iOS version
         cd ios
         
-        # Replace any iOS version references in project settings
+        # Ensure deployment target is set correctly  
         sed -i.bak 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*/IPHONEOS_DEPLOYMENT_TARGET = 12.0/g' Runner.xcodeproj/project.pbxproj
         
-        cd ..
-        
-        # Now try Flutter build with deployment target set
-        flutter build ios --release --no-codesign
+        # Build with xcodebuild, bypassing Flutter's iOS 18 requirement
+        xcodebuild -workspace Runner.xcworkspace \
+          -scheme Runner \
+          -configuration Release \
+          -sdk $IOS_SDK \
+          CODE_SIGNING_ALLOWED=NO \
+          IPHONEOS_DEPLOYMENT_TARGET=12.0 \
+          build
     
     - name: Create unsigned IPA for testing
       run: |
