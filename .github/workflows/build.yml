@@ -45,7 +45,10 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Select Xcode version
-      run: sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+      run: |
+        sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+        xcode-select -p
+        xcodebuild -version
     
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
@@ -95,7 +98,14 @@ jobs:
         # List available SDKs
         xcodebuild -showsdks | grep iphoneos
         
-        # Build with available iOS SDK
+        # Get the latest available iOS SDK
+        IOS_SDK=$(xcodebuild -showsdks | grep iphoneos | tail -1 | awk '{print $4}')
+        echo "Using iOS SDK: $IOS_SDK"
+        
+        # Set the iOS SDK environment variable for Flutter
+        export FLUTTER_XCODE_IPHONEOS_DEPLOYMENT_TARGET=12.0
+        
+        # Build iOS app with Flutter
         flutter build ios --release --no-codesign
     
     - name: Build IPA
