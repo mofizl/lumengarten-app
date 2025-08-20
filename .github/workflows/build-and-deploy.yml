@@ -120,26 +120,39 @@ jobs:
         cd ios
         pod install
     
+    - name: Clean previous builds
+      run: |
+        flutter clean
+        cd ios
+        rm -rf build/ || true
+        rm -rf Pods/ || true
+        rm -rf .symlinks/ || true
+        rm Podfile.lock || true
+
     - name: Build iOS (No Code Signing)
       run: |
-        # List available SDKs
-        xcodebuild -showsdks | grep iphoneos
+        echo "Available iOS Simulators:"
+        xcrun simctl list devices | grep "iPhone 15" | head -3
         
-        # Get the latest available iOS SDK
-        IOS_SDK=$(xcodebuild -showsdks | grep iphoneos | tail -1 | awk '{print $4}')
-        echo "Using iOS SDK: $IOS_SDK"
+        echo "Available iOS SDKs:"
+        xcodebuild -showsdks | grep -E "(iphoneos|iphonesimulator)"
         
         cd ios
         
-        # Ensure deployment target is set correctly  
+        # Ensure deployment target consistency
+        echo "Setting iOS deployment target to 12.0..."
         sed -i.bak 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*/IPHONEOS_DEPLOYMENT_TARGET = 12.0/g' Runner.xcodeproj/project.pbxproj
         
-        # Build for simulator (no code signing required)
+        # Build for iOS Simulator with explicit settings
+        echo "Starting iOS Simulator build..."
         xcodebuild -workspace Runner.xcworkspace \
           -scheme Runner \
           -configuration Release \
           -sdk iphonesimulator \
           -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+          -derivedDataPath build \
+          IPHONEOS_DEPLOYMENT_TARGET=12.0 \
+          ONLY_ACTIVE_ARCH=YES \
           build
           
         echo "iOS build completed successfully!"

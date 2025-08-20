@@ -49,6 +49,8 @@ jobs:
         sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
         xcode-select -p
         xcodebuild -version
+        echo "Available Xcode installations:"
+        ls -la /Applications/ | grep Xcode
     
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
@@ -56,41 +58,66 @@ jobs:
         flutter-version: '3.24.3'
         channel: 'stable'
     
+    - name: Verify Flutter and show doctor
+      run: |
+        flutter --version
+        flutter doctor -v
+    
     - name: Get dependencies
       run: flutter pub get
     
-    - name: Install CocoaPods
+    - name: Clean previous builds
       run: |
+        flutter clean
         cd ios
-        pod install
+        rm -rf build/ || true
+        rm -rf Pods/ || true
+        rm -rf .symlinks/ || true
+        rm Podfile.lock || true
     
-    - name: Build iOS (No Code Signing)
+    - name: Install CocoaPods dependencies
       run: |
-        # List available SDKs
-        xcodebuild -showsdks | grep iphoneos
+        cd ios
+        echo "Installing CocoaPods..."
+        pod --version
+        pod install --verbose
         
-        # Get the latest available iOS SDK
-        IOS_SDK=$(xcodebuild -showsdks | grep iphoneos | tail -1 | awk '{print $4}')
-        echo "Using iOS SDK: $IOS_SDK"
+        echo "Checking Podfile.lock:"
+        head -20 Podfile.lock
+    
+    - name: Build iOS for Simulator
+      run: |
+        echo "Available iOS Simulators:"
+        xcrun simctl list devices | grep "iPhone 15" | head -3
+        
+        echo "Available iOS SDKs:"
+        xcodebuild -showsdks | grep -E "(iphoneos|iphonesimulator)"
         
         cd ios
         
-        # Ensure deployment target is set correctly  
+        # Ensure deployment target consistency
+        echo "Setting iOS deployment target to 12.0..."
         sed -i.bak 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*/IPHONEOS_DEPLOYMENT_TARGET = 12.0/g' Runner.xcodeproj/project.pbxproj
         
-        # Build for simulator (no code signing required)
+        # Build for iOS Simulator with explicit settings
+        echo "Starting iOS Simulator build..."
         xcodebuild -workspace Runner.xcworkspace \
           -scheme Runner \
           -configuration Release \
           -sdk iphonesimulator \
           -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+          -derivedDataPath build \
+          IPHONEOS_DEPLOYMENT_TARGET=12.0 \
+          ONLY_ACTIVE_ARCH=YES \
           build
           
         echo "iOS build completed successfully!"
     
-    - name: Upload build logs
+    - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: ios-build-logs
-        path: ios/build/
+        name: ios-simulator-build
+        path: |
+          ios/build/
+          ios/Podfile.lock
         if-no-files-found: warn
