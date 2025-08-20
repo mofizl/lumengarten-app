@@ -4,6 +4,8 @@
 <dict>
     <key>method</key>
     <string>app-store</string>
+    <key>teamID</key>
+    <string>$(APP_STORE_CONNECT_TEAM_ID)</string>
     <key>uploadBitcode</key>
     <false/>
     <key>uploadSymbols</key>
@@ -12,5 +14,14 @@
     <false/>
     <key>manageAppVersionAndBuildNumber</key>
     <true/>
+    <key>signingCertificate</key>
+    <string>iOS Distribution</string>
+    <key>signingStyle</key>
+    <string>manual</string>
+    <key>provisioningProfiles</key>
+    <dict>
+        <key>com.lumengarten.lumengartenApp</key>
+        <string>$(PROVISIONING_PROFILE_NAME)</string>
+    </dict>
 </dict>
 </plist>
