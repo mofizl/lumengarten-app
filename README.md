@@ -808,3 +808,148 @@ flutter build appbundle --release
 - [ ] Performance Monitoring implementieren
 
 **Das Android Setup ist der Schlüssel für echte Mobile App Development und Store-Ready Deployment!** 📱🚀
+
+---
+
+## 🔧 **Aktuelle Session: Android SDK Setup Problem (21. August 2025)**
+
+### **🚨 Problem Status: SDK Installation Issue**
+
+**Situation:** Android Studio ist installiert und von Flutter erkannt, aber während der initialen Setup-Wizard das Android SDK nicht installieren kann.
+
+**Error:** "SDK unavailable" während des Installation-Prozesses, trotz Admin-Rechten
+
+### **🔍 Problemdiagnose:**
+
+#### **Flutter Doctor Output:**
+```bash
+[√] Flutter (Channel stable, 3.24.3)
+[√] Android Studio (version 2025.1.2) 
+[X] Android toolchain - develop for Android devices
+    X Unable to locate Android SDK.
+```
+
+#### **Mögliche Ursachen (basierend auf Research):**
+1. **Network/Firewall Issues:** Windows Firewall oder Corporate Proxy blockiert SDK Downloads
+2. **Download Server Problems:** Google SDK Server temporär nicht erreichbar
+3. **Environment Variable Conflicts:** Alte ANDROID_HOME/ANDROID_SDK_ROOT Variablen
+4. **VPN Interference:** VPN kann SDK Downloads blockieren
+5. **Permissions:** Unzureichende Schreibrechte trotz Admin-Modus
+6. **Proxy Settings:** Corporate Network Proxy nicht konfiguriert
+
+### **🛠️ Implementierte Lösungsversuche:**
+
+#### **1. Manuelle SDK Pfad Konfiguration:**
+```bash
+# SDK Ordner manuell erstellt:
+mkdir -p "C:\Android\sdk"
+
+# Flutter Konfiguration:
+flutter config --android-sdk "C:\Android\sdk"
+# Output: Setting "android-sdk" value to "C:\Android\sdk".
+```
+
+### **🎯 Nächste Lösungsschritte für die kommende Session:**
+
+#### **Sofort zu versuchen:**
+
+**1. Android Studio SDK Manager direkt nutzen:**
+- Android Studio öffnen
+- Welcome Screen → "More Actions" → "SDK Manager"
+- Oder: File → Settings → System Settings → Android SDK
+- Manual SDK Installation ohne Setup Wizard
+
+**2. Firewall-Konfiguration prüfen:**
+```bash
+# Windows Firewall Settings öffnen:
+# Windows-Taste + R → firewall.cpl → Enter
+```
+- Android Studio zu erlaubten Apps hinzufügen
+- Beide Häkchen bei "Privat" und "Öffentlich" setzen
+
+**3. Network Troubleshooting:**
+- VPN temporär deaktivieren (falls aktiv)
+- Proxy Settings in Android Studio prüfen:
+  - File → Settings → HTTP Proxy → "Auto-detect proxy settings"
+
+**4. Alternative: Command Line Tools Download:**
+```bash
+# Direkt von Google herunterladen:
+# https://developer.android.com/studio/command-line
+# commandlinetools-win-11076708_latest.zip
+```
+
+**5. Environment Variables bereinigen:**
+```bash
+# Prüfen auf existierende Variablen:
+echo $ANDROID_HOME
+echo $ANDROID_SDK_ROOT
+echo $HTTPS_PROXY
+
+# Falls vorhanden: temporär entfernen
+```
+
+### **📋 Session Continuation Checklist:**
+
+#### **Diagnostik:**
+- [ ] Android Studio SDK Manager öffnen und Manual Installation versuchen
+- [ ] Windows Firewall Konfiguration prüfen
+- [ ] VPN Status prüfen und ggf. deaktivieren
+- [ ] Environment Variables auf Konflikte checken
+- [ ] Corporate Proxy Settings evaluieren
+
+#### **Implementation:**
+- [ ] SDK über Android Studio SDK Manager installieren
+- [ ] Flutter doctor erneut ausführen
+- [ ] Android Virtual Device (AVD) erstellen
+- [ ] Erste Test-Build der Lumengarten App
+
+#### **Verification:**
+- [ ] `flutter doctor` zeigt grünes ✅ für Android toolchain
+- [ ] `flutter devices` zeigt Android Emulator
+- [ ] `flutter run` kann Android als Target wählen
+- [ ] Lumengarten App läuft erfolgreich auf Android
+
+### **🚀 Post-Setup Tasks (nach erfolgreicher SDK Installation):**
+
+#### **Android Testing:**
+- [ ] Touch-to-Start System auf Android verifizieren
+- [ ] Audio-Wiedergabe (echte Kinderstimmen + TTS) testen
+- [ ] Performance-Vergleich Web vs Android
+- [ ] APK Build für externe Tests erstellen
+
+#### **Development Workflow:**
+- [ ] Android als Primary Development Target einrichten
+- [ ] Hot Reload Workflow auf Android etablieren
+- [ ] Debug/Release Build Pipeline testen
+
+### **💡 Fallback-Plan falls SDK Installation weiterhin fehlschlägt:**
+
+1. **Alternative Development:**
+   - Weiterhin Web-Development mit Edge
+   - APK Builds via CI/CD (GitHub Actions)
+   - Cloud-basierte Android Testing Services
+
+2. **External SDK Installation:**
+   - Manual Download der Command Line Tools
+   - SDK Manager über Kommandozeile
+   - Flutter SDK-Detection via absoluten Pfad
+
+### **📝 Known Working Configuration (Ziel):**
+```bash
+[√] Flutter (Channel stable, 3.24.3)
+[√] Android toolchain - develop for Android devices (Android SDK version 34.0.0)
+[√] Android Studio (version 2025.1.2)
+[√] Connected device (3 available)
+    • Pixel 7 API 33 (mobile) • emulator-5554 • android-x64
+    • Windows (desktop) • windows • windows-x64  
+    • Edge (web) • edge • web-javascript
+```
+
+### **⚠️ Critical Success Factors:**
+1. **Network Connectivity:** Stabile Internet für SDK Downloads
+2. **Administrative Rights:** Vollzugriff auf System-Ordner
+3. **Firewall Configuration:** Android Studio Zugriff erlaubt
+4. **Time Investment:** 30-60 Minuten für komplette Setup-Problembehebung
+
+**Diese Dokumentation ermöglicht nahtlose Fortsetzung der Android SDK Setup-Problembehebung in der nächsten Session.** 🔧📱
