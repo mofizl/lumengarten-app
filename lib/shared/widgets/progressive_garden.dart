@@ -277,11 +277,11 @@ class _ProgressiveGardenState extends ConsumerState<ProgressiveGarden>
 
   String _getGardenStatusText(int level) {
     switch (level) {
-      case 0: return '🌑 Der Garten ist verwelkt und traurig...';
-      case 1: return '🌱 Ein Hoffnungsschimmer erwacht!';
-      case 2: return '🌸 Der Garten beginnt zu erblühen!';
-      case 3: return '💎 Magische Energie durchströmt alles!';
-      case 4: return '✨ Der Lumengarten erstrahlt in voller Pracht!';
+      case 0: return '🌑 Dunkis Garten ist verwelkt und traurig...';
+      case 1: return '🌱 Dunki spürt einen Hoffnungsschimmer!';
+      case 2: return '🌸 Dunkis Garten beginnt zu erblühen!';
+      case 3: return '💎 Magische Energie durchströmt Dunkis Reich!';
+      case 4: return '✨ Dunkis Lumengarten erstrahlt in voller Pracht!';
       default: return '';
     }
   }

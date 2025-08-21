@@ -41,6 +41,12 @@ dependencies:
   # Storage & Preferences
   shared_preferences: ^2.3.2
   
+  # Text-to-Speech
+  flutter_tts: ^4.0.2
+  
+  # Audio Player für Kinderstimmen
+  audioplayers: ^6.1.0
+  
   # Animations
   lottie: ^3.1.2
 
@@ -73,6 +79,9 @@ flutter:
     - assets/images/garden/
     - assets/images/icons/
     - assets/sounds/
+    - assets/sounds/story/
+    - assets/sounds/cards/
+    - assets/sounds/ui/
     - assets/animations/
 
   # An image asset can refer to one or more resolution-specific "variants", see

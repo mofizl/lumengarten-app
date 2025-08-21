@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/services/progress_service.dart';
-import '../../shared/widgets/progressive_garden.dart';
+import '../../core/services/voice_service.dart';
 
 class LandingPage extends ConsumerStatefulWidget {
   const LandingPage({super.key});
@@ -19,15 +19,28 @@ class _LandingPageState extends ConsumerState<LandingPage>
   late AnimationController _scaleController;
   late AnimationController _slideController;
   late AnimationController _pulseController;
+  late AnimationController _storyController;
+  
+  final VoiceService _voiceService = VoiceService();
   
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _pulseAnimation;
+  late Animation<double> _storyAnimation;
+  late Animation<double> _corruptionAnimation;
+  
+  bool _showBeautifulGarden = true;
+  bool _showStoryText = false;
+  bool _showCorruption = false;
+  String _currentStoryText = "";
 
   @override
   void initState() {
     super.initState();
+    
+    // Voice Service initialisieren
+    _voiceService.initialize();
     
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 2000),
@@ -45,6 +58,10 @@ class _LandingPageState extends ConsumerState<LandingPage>
       duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
+    _storyController = AnimationController(
+      duration: const Duration(milliseconds: 8000), // 8 Sekunden für die gesamte Story
+      vsync: this,
+    );
     
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
@@ -60,7 +77,18 @@ class _LandingPageState extends ConsumerState<LandingPage>
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
     
-    _startAnimations();
+    // Story-Animationen für die dramatische Sequenz
+    _storyAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _storyController, curve: Curves.easeInOut),
+    );
+    _corruptionAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _storyController, 
+        curve: const Interval(0.5, 1.0, curve: Curves.easeInOut), // Startet bei 50% der Story
+      ),
+    );
+    
+    _startStorySequence();
   }
 
   void _startAnimations() async {
@@ -75,12 +103,69 @@ class _LandingPageState extends ConsumerState<LandingPage>
     _pulseController.repeat(reverse: true);
   }
 
+  void _startStorySequence() async {
+    // Phase 1: Zeige den schönen Garten (4 Sekunden)
+    setState(() {
+      _showBeautifulGarden = true;
+      _currentStoryText = "Es war einmal ein wunderschöner magischer Garten...";
+      _showStoryText = true;
+    });
+    _speakText(_currentStoryText);
+    
+    await Future.delayed(const Duration(seconds: 4));
+    
+    // Phase 2: Dunki stellt sich vor (4 Sekunden)  
+    setState(() {
+      _currentStoryText = "Hier lebte Dunki, der freundliche Gartendrachen! 🐲";
+    });
+    _speakText(_currentStoryText);
+    
+    await Future.delayed(const Duration(seconds: 4));
+    
+    // Phase 3: Der dunkle Zauber beginnt (3 Sekunden)
+    setState(() {
+      _currentStoryText = "Doch plötzlich... Ein dunkler Schatten zog über das Land! ⚡";
+      _showCorruption = true;
+    });
+    _speakText(_currentStoryText);
+    
+    _storyController.forward();
+    
+    await Future.delayed(const Duration(seconds: 3));
+    
+    // Phase 4: Garten wird verwelkt (4 Sekunden)
+    setState(() {
+      _showBeautifulGarden = false;
+      _currentStoryText = "Ein böser Zauberer hat alle Lichtblumen gestohlen! 😢";
+    });
+    _speakText(_currentStoryText);
+    
+    await Future.delayed(const Duration(seconds: 4));
+    
+    // Phase 5: Aufruf zur Hilfe
+    setState(() {
+      _currentStoryText = "Hallo! Ich bin Dunki, der Gartendrachen! "
+                         "Hilfst du mir, das Licht zurückzubringen?";
+    });
+    _speakText(_currentStoryText);
+    
+    // Normale Animationen starten
+    _startAnimations();
+  }
+
+  void _speakText(String text) {
+    // Voice Service - bevorzugt Kinderstimmen-Audio, fallback zu TTS
+    _voiceService.speak(text);
+  }
+
   @override
   void dispose() {
+    _voiceService.stop(); // Stoppe Voice Service beim Verlassen der Seite
     _fadeController.dispose();
     _scaleController.dispose();
     _slideController.dispose();
     _pulseController.dispose();
+    _storyController.dispose();
     super.dispose();
   }
 
@@ -93,15 +178,89 @@ class _LandingPageState extends ConsumerState<LandingPage>
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Progressiver Vollbild-Garten-Hintergrund
+            // Dynamischer Garten-Hintergrund basierend auf Story-Phase
             Positioned.fill(
-              child: ProgressiveGarden(
-                width: double.infinity,
-                height: double.infinity,
-                fit: BoxFit.cover,
-                showOverlay: false, // Kein Overlay auf Landing Page
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 2000),
+                child: _showBeautifulGarden
+                    ? Container(
+                        key: const ValueKey('beautiful'),
+                        width: double.infinity,
+                        height: double.infinity,
+                        child: ColorFiltered(
+                          colorFilter: const ColorFilter.matrix([
+                            1.2, 0.0, 0.0, 0, 20,  // Heller und lebendiger
+                            0.0, 1.1, 0.0, 0, 15,
+                            0.0, 0.0, 1.2, 0, 25,
+                            0, 0, 0, 1, 0,
+                          ]),
+                          child: Image.asset(
+                            'assets/images/garden/awakening_garden.png',
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      )
+                    : Container(
+                        key: const ValueKey('withered'), 
+                        width: double.infinity,
+                        height: double.infinity,
+                        child: ColorFiltered(
+                          colorFilter: const ColorFilter.matrix([
+                            0.4, 0.4, 0.4, 0, -20, // Grau und dunkel
+                            0.4, 0.4, 0.4, 0, -20,
+                            0.4, 0.4, 0.4, 0, -20,
+                            0, 0, 0, 1, 0,
+                          ]),
+                          child: Image.asset(
+                            'assets/images/landing/withered_garden.png',
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
               ),
             ),
+            
+            // Korruptions-Overlay während der Transformation
+            if (_showCorruption)
+              Positioned.fill(
+                child: AnimatedBuilder(
+                  animation: _corruptionAnimation,
+                  builder: (context, child) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          center: const Alignment(0.3, -0.5),
+                          radius: 1.5,
+                          colors: [
+                            Colors.purple.shade900.withOpacity(0.8 * _corruptionAnimation.value),
+                            Colors.black.withOpacity(0.6 * _corruptionAnimation.value),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                      // Blitze und dunkle Energie-Effekte
+                      child: Stack(
+                        children: List.generate(8, (index) {
+                          final delay = index * 0.1;
+                          final animValue = (_corruptionAnimation.value + delay) % 1.0;
+                          return Positioned(
+                            left: 50.0 + index * 100.0,
+                            top: 50.0 + 200.0 * animValue,
+                            child: Opacity(
+                              opacity: (1.0 - animValue) * _corruptionAnimation.value,
+                              child: Icon(
+                                index % 2 == 0 ? Icons.flash_on : Icons.cloud,
+                                color: Colors.purple.shade300,
+                                size: 20 + (index % 3) * 10,
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                    );
+                  },
+                ),
+              ),
             
             // Dunkler Overlay für bessere Lesbarkeit
             Positioned.fill(
@@ -227,23 +386,22 @@ class _LandingPageState extends ConsumerState<LandingPage>
                       
                       const Spacer(flex: 2),
                       
-                      // Sprechblase mit Geschichte
-                      SlideTransition(
-                        position: _slideAnimation,
-                        child: FadeTransition(
-                          opacity: _fadeAnimation,
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: Container(
-                              constraints: const BoxConstraints(maxWidth: 400),
-                              margin: const EdgeInsets.only(left: 40),
+                      // Sprechblase mit dynamischer Geschichte
+                      if (_showStoryText)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Container(
+                            constraints: const BoxConstraints(maxWidth: 450),
+                            margin: const EdgeInsets.only(left: 40),
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 800),
                               child: CustomPaint(
+                                key: ValueKey(_currentStoryText),
                                 painter: SpeechBubblePainter(),
                                 child: Container(
                                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
                                   child: Text(
-                                    'Hilf mir... Im magischen Lumengarten ist etwas Schreckliches passiert! '
-                                    'Alle Lichtblumen sind verwelkt. Nur DU kannst das Licht zurückbringen!',
+                                    _currentStoryText,
                                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                       height: 1.4,
                                       color: AppTheme.darkGray,
@@ -257,7 +415,6 @@ class _LandingPageState extends ConsumerState<LandingPage>
                             ),
                           ),
                         ),
-                      ),
                       
                       const Spacer(flex: 2),
                       
@@ -296,7 +453,7 @@ class _LandingPageState extends ConsumerState<LandingPage>
                                       },
                                       icon: const Icon(Icons.pets, size: 20),
                                       label: Text(
-                                        'Hilfst du mir?',
+                                        'Ich helfe Dunki!',
                                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                           color: AppTheme.white,
                                           fontWeight: FontWeight.w600,
@@ -317,21 +474,6 @@ class _LandingPageState extends ConsumerState<LandingPage>
                                 );
                               },
                             ),
-                          ),
-                        ),
-                      ),
-                      
-                      // Demo-Button für Progression (zum Testen)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        child: ElevatedButton(
-                          onPressed: () {
-                            ref.read(progressProvider.notifier).simulateProgress();
-                          },
-                          child: const Text('🌟 Demo: Garten erwecken'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange.withOpacity(0.8),
-                            foregroundColor: Colors.white,
                           ),
                         ),
                       ),

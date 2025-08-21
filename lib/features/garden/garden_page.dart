@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
-import '../../shared/widgets/learning_area_card.dart';
+import '../../core/services/voice_service.dart';
+import '../../shared/widgets/progressive_garden.dart';
 
-class GardenPage extends StatefulWidget {
+class GardenPage extends ConsumerStatefulWidget {
   const GardenPage({super.key});
 
   @override
-  State<GardenPage> createState() => _GardenPageState();
+  ConsumerState<GardenPage> createState() => _GardenPageState();
 }
 
-class _GardenPageState extends State<GardenPage>
+class _GardenPageState extends ConsumerState<GardenPage>
     with TickerProviderStateMixin {
   late AnimationController _headerController;
   late AnimationController _cardsController;
   late AnimationController _floatingController;
+  
+  final VoiceService _voiceService = VoiceService();
   
   late Animation<double> _headerFadeAnimation;
   late Animation<Offset> _headerSlideAnimation;
@@ -25,6 +29,9 @@ class _GardenPageState extends State<GardenPage>
   @override
   void initState() {
     super.initState();
+    
+    // Voice Service initialisieren
+    _voiceService.initialize();
     
     _headerController = AnimationController(
       duration: const Duration(milliseconds: 1500),
@@ -68,6 +75,7 @@ class _GardenPageState extends State<GardenPage>
 
   @override
   void dispose() {
+    _voiceService.stop(); // Stoppe Voice Service beim Verlassen der Seite
     _headerController.dispose();
     _cardsController.dispose();
     _floatingController.dispose();
@@ -77,390 +85,271 @@ class _GardenPageState extends State<GardenPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mein Lumengarten'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go(AppConstants.landingRoute),
-        ),
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppTheme.lightBlue,
-              AppTheme.magicGreen,
-            ],
-          ),
-        ),
-        child: Padding(
-          padding: AppStyles.pagePadding,
-          child: Column(
-            children: [
-              // Magischer Garten Header mit Animationen
-              FadeTransition(
-                opacity: _headerFadeAnimation,
-                child: SlideTransition(
-                  position: _headerSlideAnimation,
-                  child: AnimatedBuilder(
-                    animation: _floatingAnimation,
-                    builder: (context, child) {
-                      return Transform.translate(
-                        offset: Offset(0, 5 * _floatingAnimation.value),
-                        child: Container(
-                          width: double.infinity,
-                          height: 200,
-                          decoration: BoxDecoration(
-                            borderRadius: AppStyles.cardRadius,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 15,
-                                offset: const Offset(0, 8),
-                              ),
-                              BoxShadow(
-                                color: AppTheme.magicGreen.withOpacity(0.3),
-                                blurRadius: 25,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: AppStyles.cardRadius,
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                // Haupt-Garten-Bild
-                                Image.asset(
-                                  'assets/images/garden/awakening_garden.png',
-                                  fit: BoxFit.cover,
-                                ),
-                                // Magischer Schimmer-Overlay
-                                AnimatedBuilder(
-                                  animation: _floatingAnimation,
-                                  builder: (context, child) {
-                                    return Container(
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                          colors: [
-                                            AppTheme.starYellow.withOpacity(0.1 + 0.1 * _floatingAnimation.value),
-                                            Colors.transparent,
-                                            AppTheme.magicGreen.withOpacity(0.1 + 0.1 * _floatingAnimation.value),
-                                            Colors.transparent,
-                                            AppTheme.primaryPurple.withOpacity(0.1 + 0.1 * _floatingAnimation.value),
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                                // Fortschritts-Overlay mit Animation
-                                Positioned(
-                                  bottom: 16,
-                                  left: 16,
-                                  right: 16,
-                                  child: FadeTransition(
-                                    opacity: CurvedAnimation(
-                                      parent: _headerController,
-                                      curve: const Interval(0.5, 1.0, curve: Curves.easeIn),
-                                    ),
-                                    child: SlideTransition(
-                                      position: Tween<Offset>(
-                                        begin: const Offset(0, 0.5),
-                                        end: Offset.zero,
-                                      ).animate(CurvedAnimation(
-                                        parent: _headerController,
-                                        curve: const Interval(0.5, 1.0, curve: Curves.easeOutBack),
-                                      )),
-                                      child: Container(
-                                        padding: const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              AppTheme.white.withOpacity(0.95),
-                                              AppTheme.white.withOpacity(0.9),
-                                            ],
-                                          ),
-                                          borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(
-                                            color: AppTheme.magicGreen.withOpacity(0.3),
-                                            width: 2,
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: AppTheme.magicGreen.withOpacity(0.2),
-                                              blurRadius: 10,
-                                              offset: const Offset(0, 3),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Column(
-                                          children: [
-                                            AnimatedBuilder(
-                                              animation: _floatingAnimation,
-                                              builder: (context, child) {
-                                                return Transform.scale(
-                                                  scale: 1.0 + 0.02 * _floatingAnimation.value,
-                                                  child: Text(
-                                                    'Dein magischer Garten erwacht... 🌱',
-                                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                                      fontWeight: FontWeight.bold,
-                                                      color: AppTheme.darkGray,
-                                                    ),
-                                                    textAlign: TextAlign.center,
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                            const SizedBox(height: 8),
-                                            AnimatedBuilder(
-                                              animation: _headerController,
-                                              builder: (context, child) {
-                                                return LinearProgressIndicator(
-                                                  value: 0.2 * _headerController.value,
-                                                  backgroundColor: AppTheme.lightGray,
-                                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                                    AppTheme.magicGreen,
-                                                  ),
-                                                  minHeight: 6,
-                                                );
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                // Glitzer-Partikel-Effekt
-                                ...List.generate(6, (index) {
-                                  return AnimatedBuilder(
-                                    animation: _floatingController,
-                                    builder: (context, child) {
-                                      final delay = index * 0.2;
-                                      final animValue = (_floatingAnimation.value + delay) % 1.0;
-                                      return Positioned(
-                                        left: 50.0 + index * 45.0,
-                                        top: 20.0 + 30.0 * animValue,
-                                        child: Opacity(
-                                          opacity: (1.0 - animValue) * 0.8,
-                                          child: Container(
-                                            width: 4,
-                                            height: 4,
-                                            decoration: BoxDecoration(
-                                              color: AppTheme.starYellow,
-                                              shape: BoxShape.circle,
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: AppTheme.starYellow.withOpacity(0.5),
-                                                  blurRadius: 6,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  );
-                                }),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+      body: SizedBox(
+        width: double.infinity,
+        height: double.infinity,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Progressive Garden als Vollbild-Hintergrund
+            Positioned.fill(
+              child: ProgressiveGarden(
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                showOverlay: true, // Zeige Fortschritt-Overlay
               ),
-              
-              const SizedBox(height: 20),
-              
-              // 4 Lernbereiche im Garten
-              Expanded(
+            ),
+            
+            // Back Button - oben links
+            Positioned(
+              top: 50,
+              left: 20,
+              child: SafeArea(
                 child: Container(
-                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppTheme.white.withOpacity(0.1),
-                    borderRadius: AppStyles.cardRadius,
-                    border: Border.all(
-                      color: AppTheme.moonSilver.withOpacity(0.3),
-                      width: 2,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        '🌟 Wähle deinen Lernbereich 🌟',
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          color: AppTheme.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 20),
-                      
-                      // Erste Reihe: Lesen & Schreiben mit gestaffelter Animation
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: AnimatedBuilder(
-                                animation: _cardsStaggerAnimation,
-                                builder: (context, child) {
-                                  final cardDelay = 0.0;
-                                  final cardProgress = Curves.easeOutBack.transform(
-                                    (_cardsStaggerAnimation.value - cardDelay).clamp(0.0, 1.0),
-                                  );
-                                  return Transform.translate(
-                                    offset: Offset(0, 50 * (1 - cardProgress)),
-                                    child: Opacity(
-                                      opacity: cardProgress,
-                                      child: Transform.scale(
-                                        scale: 0.8 + 0.2 * cardProgress,
-                                        child: LearningAreaCard(
-                                          title: 'Lese-Abenteuer',
-                                          emoji: '📚',
-                                          description: 'Buchstaben\n& Wörter',
-                                          progress: 0.2,
-                                          color: AppTheme.lightPurple,
-                                          onTap: () => context.go('/games/reading'),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: AnimatedBuilder(
-                                animation: _cardsStaggerAnimation,
-                                builder: (context, child) {
-                                  final cardDelay = 0.2;
-                                  final cardProgress = Curves.easeOutBack.transform(
-                                    (_cardsStaggerAnimation.value - cardDelay).clamp(0.0, 1.0),
-                                  );
-                                  return Transform.translate(
-                                    offset: Offset(0, 50 * (1 - cardProgress)),
-                                    child: Opacity(
-                                      opacity: cardProgress,
-                                      child: Transform.scale(
-                                        scale: 0.8 + 0.2 * cardProgress,
-                                        child: LearningAreaCard(
-                                          title: 'Schreib-Werkstatt',
-                                          emoji: '✏️',
-                                          description: 'Motorik\n& Formen',
-                                          progress: 0.1,
-                                          color: AppTheme.starYellow,
-                                          onTap: () => context.go('/games/writing'),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 16),
-                      
-                      // Zweite Reihe: Logik & Mathe mit gestaffelter Animation
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: AnimatedBuilder(
-                                animation: _cardsStaggerAnimation,
-                                builder: (context, child) {
-                                  final cardDelay = 0.4;
-                                  final cardProgress = Curves.easeOutBack.transform(
-                                    (_cardsStaggerAnimation.value - cardDelay).clamp(0.0, 1.0),
-                                  );
-                                  return Transform.translate(
-                                    offset: Offset(0, 50 * (1 - cardProgress)),
-                                    child: Opacity(
-                                      opacity: cardProgress,
-                                      child: Transform.scale(
-                                        scale: 0.8 + 0.2 * cardProgress,
-                                        child: LearningAreaCard(
-                                          title: 'Logik-Labor',
-                                          emoji: '🧪',
-                                          description: 'Denken\n& Rätseln',
-                                          progress: 0.0,
-                                          color: AppTheme.magicGreen,
-                                          onTap: () => context.go('/games/logic'),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: AnimatedBuilder(
-                                animation: _cardsStaggerAnimation,
-                                builder: (context, child) {
-                                  final cardDelay = 0.6;
-                                  final cardProgress = Curves.easeOutBack.transform(
-                                    (_cardsStaggerAnimation.value - cardDelay).clamp(0.0, 1.0),
-                                  );
-                                  return Transform.translate(
-                                    offset: Offset(0, 50 * (1 - cardProgress)),
-                                    child: Opacity(
-                                      opacity: cardProgress,
-                                      child: Transform.scale(
-                                        scale: 0.8 + 0.2 * cardProgress,
-                                        child: LearningAreaCard(
-                                          title: 'Zahlen-Zoo',
-                                          emoji: '🦁',
-                                          description: 'Rechnen\n& Zählen',
-                                          progress: 0.0,
-                                          color: AppTheme.primaryBlue,
-                                          onTap: () => context.go('/games/math'),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(25),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-                ),
-              ),
-              
-              const SizedBox(height: 20),
-              
-              // Fortschritts-Button
-              ElevatedButton.icon(
-                onPressed: () {
-                  context.go(AppConstants.progressRoute);
-                },
-                icon: const Icon(Icons.analytics, size: 24),
-                label: const Text('Meine Erfolge'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryPurple,
-                  foregroundColor: AppTheme.white,
-                  minimumSize: const Size(180, 50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back, color: AppTheme.darkGray),
+                    onPressed: () => context.go(AppConstants.landingRoute),
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+            
+            // Titel - oben mittig
+            Positioned(
+              top: 50,
+              left: 80,
+              right: 20,
+              child: SafeArea(
+                child: FadeTransition(
+                  opacity: _headerFadeAnimation,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(25),
+                      border: Border.all(
+                        color: AppTheme.magicGreen.withOpacity(0.5),
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 15,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      'Dunkis magischer Lumengarten',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.darkGray,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            
+            // Lernbereich-Karten - unten
+            Positioned(
+              bottom: 40,
+              left: 20,
+              right: 20,
+              child: SafeArea(
+                child: FadeTransition(
+                  opacity: _cardsStaggerAnimation,
+                  child: SizedBox(
+                    height: 200,
+                    child: GridView.count(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 1.2,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: [
+                        _buildFloatingLearningCard(
+                          title: 'Lese-Abenteuer',
+                          emoji: '📚',
+                          description: 'Magische Geschichten',
+                          progress: 0.2,
+                          color: AppTheme.primaryBlue,
+                          delay: 0.0,
+                          onTap: () {
+                            _voiceService.speak('Lese-Abenteuer. Magische Geschichten.');
+                            Future.delayed(const Duration(milliseconds: 1500), () {
+                              context.go('/games/reading');
+                            });
+                          },
+                        ),
+                        _buildFloatingLearningCard(
+                          title: 'Schreib-Werkstatt', 
+                          emoji: '✏️',
+                          description: 'Zauberhafte Buchstaben',
+                          progress: 0.1,
+                          color: AppTheme.magicGreen,
+                          delay: 0.2,
+                          onTap: () {
+                            _voiceService.speak('Schreib-Werkstatt. Zauberhafte Buchstaben.');
+                            Future.delayed(const Duration(milliseconds: 1500), () {
+                              context.go('/games/writing');
+                            });
+                          },
+                        ),
+                        _buildFloatingLearningCard(
+                          title: 'Logik-Labor',
+                          emoji: '🧪', 
+                          description: 'Clevere Rätsel',
+                          progress: 0.0,
+                          color: AppTheme.lightPurple,
+                          delay: 0.4,
+                          onTap: () {
+                            _voiceService.speak('Logik-Labor. Clevere Rätsel.');
+                            Future.delayed(const Duration(milliseconds: 1500), () {
+                              context.go('/games/logic');
+                            });
+                          },
+                        ),
+                        _buildFloatingLearningCard(
+                          title: 'Zahlen-Zoo',
+                          emoji: '🦁',
+                          description: 'Tierische Mathematik',
+                          progress: 0.0,
+                          color: AppTheme.starYellow,
+                          delay: 0.6,
+                          onTap: () {
+                            _voiceService.speak('Zahlen-Zoo. Tierische Mathematik.');
+                            Future.delayed(const Duration(milliseconds: 1500), () {
+                              context.go('/games/math');
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _buildFloatingLearningCard({
+    required String title,
+    required String emoji,
+    required String description,
+    required double progress,
+    required Color color,
+    required double delay,
+    required VoidCallback onTap,
+  }) {
+    return AnimatedBuilder(
+      animation: _floatingAnimation,
+      builder: (context, child) {
+        final floatingOffset = 3 * _floatingAnimation.value * (1 + delay);
+        return Transform.translate(
+          offset: Offset(0, floatingOffset),
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.8, end: 1.0).animate(
+              CurvedAnimation(
+                parent: _cardsController,
+                curve: Interval(delay, delay + 0.4, curve: Curves.elasticOut),
+              ),
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: color.withOpacity(0.5),
+                  width: 2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
+                  BoxShadow(
+                    color: color.withOpacity(0.3),
+                    blurRadius: 15,
+                    offset: const Offset(0, 0),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onTap,
+                  borderRadius: BorderRadius.circular(20),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          emoji,
+                          style: const TextStyle(fontSize: 28),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.darkGray,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          description,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: AppTheme.darkGray.withOpacity(0.7),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 6),
+                        LinearProgressIndicator(
+                          value: progress,
+                          backgroundColor: AppTheme.lightGray,
+                          valueColor: AlwaysStoppedAnimation<Color>(color),
+                          minHeight: 4,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${(progress * 100).toInt()}%',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.darkGray,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

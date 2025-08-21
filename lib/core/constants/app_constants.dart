@@ -3,7 +3,8 @@ class AppConstants {
   static const String appVersion = '1.0.0';
   
   // Routes
-  static const String landingRoute = '/';
+  static const String touchToStartRoute = '/';
+  static const String landingRoute = '/landing';
   static const String gardenRoute = '/garden';
   static const String gamesRoute = '/games';
   static const String progressRoute = '/progress';

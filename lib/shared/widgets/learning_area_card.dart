@@ -203,15 +203,15 @@ class _LearningAreaCardState extends State<LearningAreaCard>
                           
                           // Content
                           Padding(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.all(12),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 // Magisches Icon mit Hover-Animation
                                 AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
-                                  width: _isHovered ? 60 : 55,
-                                  height: _isHovered ? 60 : 55,
+                                  width: _isHovered ? 45 : 40,
+                                  height: _isHovered ? 45 : 40,
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(12),
                                     boxShadow: [
@@ -234,7 +234,7 @@ class _LearningAreaCardState extends State<LearningAreaCard>
                                   ),
                                 ),
                                 
-                                const SizedBox(height: 6),
+                                const SizedBox(height: 4),
                                 
                                 // Titel mit Hover-Effekt
                                 AnimatedDefaultTextStyle(
@@ -242,7 +242,7 @@ class _LearningAreaCardState extends State<LearningAreaCard>
                                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                         fontWeight: FontWeight.bold,
                                         color: AppTheme.darkGray,
-                                        fontSize: _isHovered ? 16 : 14,
+                                        fontSize: _isHovered ? 13 : 12,
                                       ) ??
                                       const TextStyle(),
                                   child: Text(
@@ -251,21 +251,21 @@ class _LearningAreaCardState extends State<LearningAreaCard>
                                   ),
                                 ),
                                 
-                                const SizedBox(height: 2),
+                                const SizedBox(height: 1),
                                 
                                 // Beschreibung
                                 Text(
                                   widget.description,
                                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: AppTheme.darkGray.withOpacity(0.8),
-                                    fontSize: 11,
+                                    fontSize: 9,
                                   ),
                                   textAlign: TextAlign.center,
                                 ),
                                 
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 4),
                                 
-                                // Fortschrittsbalken mit Animation
+                                // Kompakter Fortschritts-Bereich
                                 Column(
                                   children: [
                                     Row(
@@ -274,24 +274,24 @@ class _LearningAreaCardState extends State<LearningAreaCard>
                                         Text(
                                           'Fortschritt',
                                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                            fontSize: 9,
+                                            fontSize: 8,
                                             color: AppTheme.darkGray,
                                           ),
                                         ),
                                         Text(
                                           '${(widget.progress * 100).toInt()}%',
                                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                            fontSize: 9,
+                                            fontSize: 8,
                                             fontWeight: FontWeight.bold,
                                             color: AppTheme.darkGray,
                                           ),
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 4),
+                                    const SizedBox(height: 2),
                                     AnimatedContainer(
                                       duration: const Duration(milliseconds: 200),
-                                      height: _isHovered ? 8 : 6,
+                                      height: _isHovered ? 6 : 4,
                                       child: LinearProgressIndicator(
                                         value: widget.progress,
                                         backgroundColor: AppTheme.lightGray,
@@ -300,23 +300,20 @@ class _LearningAreaCardState extends State<LearningAreaCard>
                                         ),
                                       ),
                                     ),
-                                    const SizedBox(height: 6),
+                                    const SizedBox(height: 3),
                                     
-                                    // Sterne mit Hover-Animation
+                                    // Kompakte Sterne
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: List.generate(3, (index) {
                                         final starThreshold = (index + 1) / 3;
                                         final isEarned = widget.progress >= starThreshold;
                                         return Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 1),
-                                          child: AnimatedContainer(
-                                            duration: Duration(milliseconds: 200 + index * 50),
-                                            child: Icon(
-                                              isEarned ? Icons.star : Icons.star_border,
-                                              color: isEarned ? AppTheme.starYellow : AppTheme.lightGray,
-                                              size: _isHovered ? 16 : 14,
-                                            ),
+                                          padding: const EdgeInsets.symmetric(horizontal: 0.5),
+                                          child: Icon(
+                                            isEarned ? Icons.star : Icons.star_border,
+                                            color: isEarned ? AppTheme.starYellow : AppTheme.lightGray,
+                                            size: _isHovered ? 12 : 10,
                                           ),
                                         );
                                       }),

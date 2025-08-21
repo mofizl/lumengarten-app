@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import '../../features/splash/touch_to_start_page.dart';
 import '../../features/landing/landing_page.dart';
 import '../../features/garden/garden_page.dart';
 import '../../features/games/games_page.dart';
@@ -8,8 +9,13 @@ import '../constants/app_constants.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
-    initialLocation: AppConstants.landingRoute,
+    initialLocation: AppConstants.touchToStartRoute,
     routes: [
+      GoRoute(
+        path: AppConstants.touchToStartRoute,
+        name: 'touch-to-start',
+        builder: (context, state) => const TouchToStartPage(),
+      ),
       GoRoute(
         path: AppConstants.landingRoute,
         name: 'landing',
