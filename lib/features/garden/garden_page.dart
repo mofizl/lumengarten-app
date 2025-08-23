@@ -166,20 +166,20 @@ class _GardenPageState extends ConsumerState<GardenPage>
             
             // Lernbereich-Karten - unten
             Positioned(
-              bottom: 40,
-              left: 20,
-              right: 20,
+              bottom: 20,
+              left: 16,
+              right: 16,
               child: SafeArea(
                 child: FadeTransition(
                   opacity: _cardsStaggerAnimation,
-                  child: SizedBox(
-                    height: 280,
+                  child: Container(
+                    height: 320,
                     child: GridView.count(
                       crossAxisCount: 2,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8,
                       childAspectRatio: 1.0,
-                      physics: const NeverScrollableScrollPhysics(),
+                      physics: const ClampingScrollPhysics(),
                       children: [
                         _buildFloatingLearningCard(
                           title: 'Lese-Abenteuer',
@@ -273,11 +273,11 @@ class _GardenPageState extends ConsumerState<GardenPage>
             ),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(20),
+                color: Colors.white.withOpacity(0.95),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: color.withOpacity(0.5),
-                  width: 2,
+                  color: color.withOpacity(0.6),
+                  width: 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -296,15 +296,15 @@ class _GardenPageState extends ConsumerState<GardenPage>
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: onTap,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(16),
                   child: Padding(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(8),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          width: 60,
-                          height: 60,
+                          width: 50,
+                          height: 50,
                           decoration: BoxDecoration(
                             color: color.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(15),
@@ -313,39 +313,39 @@ class _GardenPageState extends ConsumerState<GardenPage>
                             borderRadius: BorderRadius.circular(15),
                             child: Image.asset(
                               iconPath,
-                              width: 40,
-                              height: 40,
+                              width: 30,
+                              height: 30,
                               fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
                                 return Icon(
                                   Icons.school,
-                                  size: 40,
+                                  size: 30,
                                   color: color,
                                 );
                               },
                             ),
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Text(
                           title,
                           style: const TextStyle(
-                            fontSize: 14,
+                            fontSize: 12,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.darkGray,
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 1),
                         Text(
                           description,
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 9,
                             color: AppTheme.darkGray.withOpacity(0.7),
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         LinearProgressIndicator(
                           value: progress,
                           backgroundColor: AppTheme.lightGray,
