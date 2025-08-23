@@ -811,55 +811,134 @@ flutter build appbundle --release
 
 ---
 
-## 🔧 **Aktuelle Session: Android SDK Setup Problem (21. August 2025)**
+## 🔧 **Session Update: Android SDK Setup TEILWEISE GELÖST (21. August 2025)**
 
-### **🚨 Problem Status: SDK Installation Issue**
+### **✅ ERFOLG: Android SDK ist installiert und funktioniert!**
 
-**Situation:** Android Studio ist installiert und von Flutter erkannt, aber während der initialen Setup-Wizard das Android SDK nicht installieren kann.
+#### **Was erreicht wurde:**
+- ✅ Android SDK manuell über Command Line Tools installiert
+- ✅ Flutter erkennt Android toolchain: `[√] Android toolchain - develop for Android devices (Android SDK version 33.0.2)`
+- ✅ Microsoft Defender Ausschlüsse konfiguriert
+- ✅ SDK Tools über Android Studio nachinstalliert
 
-**Error:** "SDK unavailable" während des Installation-Prozesses, trotz Admin-Rechten
-
-### **🔍 Problemdiagnose:**
-
-#### **Flutter Doctor Output:**
+#### **Aktuelle Flutter Doctor Status:**
 ```bash
 [√] Flutter (Channel stable, 3.24.3)
-[√] Android Studio (version 2025.1.2) 
-[X] Android toolchain - develop for Android devices
-    X Unable to locate Android SDK.
+[√] Windows Version
+[√] Android toolchain - develop for Android devices (Android SDK version 33.0.2)
+[√] Android Studio (version 2025.1.2)
+[√] VS Code (version 1.103.1)
+[√] Connected device (2 available)
+    • Windows (desktop) • windows • windows-x64
+    • Edge (web) • edge • web-javascript
 ```
 
-#### **Mögliche Ursachen (basierend auf Research):**
-1. **Network/Firewall Issues:** Windows Firewall oder Corporate Proxy blockiert SDK Downloads
-2. **Download Server Problems:** Google SDK Server temporär nicht erreichbar
-3. **Environment Variable Conflicts:** Alte ANDROID_HOME/ANDROID_SDK_ROOT Variablen
-4. **VPN Interference:** VPN kann SDK Downloads blockieren
-5. **Permissions:** Unzureichende Schreibrechte trotz Admin-Modus
-6. **Proxy Settings:** Corporate Network Proxy nicht konfiguriert
+### **🛠️ Erfolgreiche Installationsschritte:**
 
-### **🛠️ Implementierte Lösungsversuche:**
-
-#### **1. Manuelle SDK Pfad Konfiguration:**
+#### **1. Command Line Tools manuell installiert:**
 ```bash
-# SDK Ordner manuell erstellt:
-mkdir -p "C:\Android\sdk"
+# ZIP heruntergeladen: commandlinetools-win-13114758_latest.zip
+# Entpackt nach: C:\Android\sdk\cmdline-tools\latest\
+# Lizenzen manuell akzeptiert über CMD:
+cd C:\Android\sdk
+cmdline-tools\latest\bin\sdkmanager.bat --licenses
+# 7x "y" eingegeben für alle Lizenzen
 
-# Flutter Konfiguration:
-flutter config --android-sdk "C:\Android\sdk"
-# Output: Setting "android-sdk" value to "C:\Android\sdk".
+# Platform Tools installiert:
+cmdline-tools\latest\bin\sdkmanager.bat "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 ```
 
-### **🎯 Nächste Lösungsschritte für die kommende Session:**
+#### **2. Microsoft Defender Ausschlüsse konfiguriert:**
+- `C:\Users\mofiz\AppData\Local\Google\AndroidStudio2025.1.2`
+- `C:\Users\mofiz\Vorschulapp\lumengarten_app`
+- `C:\Android\sdk`
 
-#### **Sofort zu versuchen:**
+#### **3. SDK Location in Android Studio konfiguriert:**
+- Android Studio → New Flutter Project → Settings → SDK Location: `C:\Android\sdk`
+- SDK Tools nachinstalliert: Android Emulator, Build-Tools, Google Play services
 
-**1. Android Studio SDK Manager direkt nutzen:**
-- Android Studio öffnen
-- Welcome Screen → "More Actions" → "SDK Manager"
-- Oder: File → Settings → System Settings → Android SDK
-- Manual SDK Installation ohne Setup Wizard
+### **🚨 NOCH OFFEN: Android Emulator Problem**
 
-**2. Firewall-Konfiguration prüfen:**
+#### **Problem:**
+- AVD Manager nicht verfügbar in Android Studio Tools-Menü
+- Emulator Package nicht über sdkmanager installierbar
+- Error: `Warning: Dependant package with key emulator not found!`
+
+#### **Verfügbare Devices:**
+```bash
+C:\Android\sdk>flutter devices
+  Windows (desktop) • windows • windows-x64
+  Edge (web) • edge • web-javascript
+
+C:\Android\sdk>flutter emulators
+Unable to find any emulator sources. Please ensure you have some
+Android AVD images available.
+```
+
+### **🎯 TODO für nächste Session: Emulator Setup**
+
+#### **Option 1: Manueller Emulator Download**
+```bash
+# Emulator manuell herunterladen:
+# 1. Gehe zu: https://developer.android.com/studio/releases/emulator
+# 2. Lade "emulator-windows_x64-xxxxxxx.zip" herunter
+# 3. Entpacke nach: C:\Android\sdk\emulator\
+
+# System Image installieren:
+cd C:\Android\sdk
+cmdline-tools\latest\bin\sdkmanager.bat "system-images;android-33;google_apis;x86_64"
+
+# AVD erstellen:
+cmdline-tools\latest\bin\avdmanager.bat create avd -n Lumengarten_Test -k "system-images;android-33;google_apis;x86_64"
+
+# Emulator starten:
+emulator\emulator.exe -avd Lumengarten_Test
+```
+
+#### **Option 2: Android Studio Emulator Installation wiederholen**
+```bash
+# In Android Studio:
+# 1. Neues Flutter Projekt erstellen
+# 2. File → Settings → Languages & Frameworks → Android SDK
+# 3. SDK Tools Tab → Android Emulator aktivieren → Apply
+# 4. Android Studio neu starten
+# 5. Tools → AVD Manager sollte verfügbar sein
+```
+
+#### **Option 3: Direkte App-Tests ohne Emulator**
+```bash
+# Lumengarten App sofort testen:
+cd C:\Users\mofiz\Vorschulapp\lumengarten_app
+flutter run
+# Wähle "2" für Edge (Web) - funktioniert bereits perfekt!
+```
+
+### **📱 SOFORT VERFÜGBAR: App-Testing auf Windows/Web**
+
+Die Lumengarten App kann **sofort getestet werden:**
+
+```bash
+cd C:\Users\mofiz\Vorschulapp\lumengarten_app
+flutter run
+# Geräte-Auswahl:
+# [1]: Windows (desktop)
+# [2]: Edge (web) ← EMPFOHLEN, funktioniert bereits perfekt
+```
+
+**Die App läuft bereits vollständig im Browser mit:**
+- ✅ Touch-to-Start System
+- ✅ Audio-Wiedergabe (Kinderstimmen + TTS)
+- ✅ Vollbild Progressive Garden
+- ✅ Alle 4 Lernbereiche
+- ✅ Dunki-Story Integration
+
+### **💡 Entwicklungsempfehlung:**
+
+1. **Kurzfristig:** App-Development im Browser fortsetzen (`flutter run` → Edge)
+2. **Android Emulator:** Als separates Setup-Projekt für echte Mobile-Tests
+3. **APK Builds:** Später über `flutter build apk` für echte Android-Geräte
+
+**Das Android SDK Setup ist funktional - nur der Emulator braucht noch Feintuning!** 🎉📱
 ```bash
 # Windows Firewall Settings öffnen:
 # Windows-Taste + R → firewall.cpl → Enter

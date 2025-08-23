@@ -17,7 +17,8 @@
       "Bash(grep:*)",
       "Bash(cp:*)",
       "Bash(move \"Neue Aufnahme 26.m4a\" \"story_01_beautiful_garden.m4a\")",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(flutter run:*)"
     ],
     "deny": [],
     "ask": []
