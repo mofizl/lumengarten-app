@@ -42,7 +42,7 @@ platform :ios do
     # Build Flutter app
     sh("flutter build ios --release --no-codesign")
 
-    # Build and archive
+    # Build and archive with allowProvisioningUpdates
     build_app(
       workspace: "Runner.xcworkspace",
       scheme: "Runner",
@@ -55,6 +55,7 @@ platform :ios do
           ENV["BUNDLE_IDENTIFIER"] => ENV["PROVISIONING_PROFILE_NAME"]
         }
       },
+      xcargs: "-allowProvisioningUpdates",
       output_directory: "./fastlane/builds",
       output_name: "Lumengarten.ipa"
     )
