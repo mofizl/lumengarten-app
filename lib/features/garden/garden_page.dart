@@ -164,21 +164,21 @@ class _GardenPageState extends ConsumerState<GardenPage>
               ),
             ),
             
-            // Lernbereich-Karten - unten
+            // Lernbereich-Karten - größerer Bereich
             Positioned(
-              bottom: 20,
-              left: 16,
-              right: 16,
+              bottom: 10,
+              left: 12,
+              right: 12,
               child: SafeArea(
                 child: FadeTransition(
                   opacity: _cardsStaggerAnimation,
                   child: Container(
-                    height: 320,
+                    height: 450,
                     child: GridView.count(
                       crossAxisCount: 2,
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
-                      childAspectRatio: 1.0,
+                      mainAxisSpacing: 6,
+                      crossAxisSpacing: 6,
+                      childAspectRatio: 0.9,
                       physics: const ClampingScrollPhysics(),
                       children: [
                         _buildFloatingLearningCard(
@@ -298,7 +298,7 @@ class _GardenPageState extends ConsumerState<GardenPage>
                   onTap: onTap,
                   borderRadius: BorderRadius.circular(16),
                   child: Padding(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(4),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
