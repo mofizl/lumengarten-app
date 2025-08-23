@@ -154,10 +154,20 @@ jobs:
         echo "🔧 Setting partition list for codesign access..."
         security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
         
-        # Apply provisioning profile
-        echo "📱 Installing provisioning profile..."
+        # Apply provisioning profile with proper UUID naming
+        echo "📱 Installing provisioning profile with proper UUID..."
         mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-        cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
+        
+        # Extract UUID from profile and rename accordingly
+        PROFILE_UUID=$(security cms -D -i $PP_PATH | grep -A 1 "UUID" | tail -1 | sed 's/.*<string>//' | sed 's/<\/string>.*//' | xargs)
+        echo "📋 Profile UUID: $PROFILE_UUID"
+        
+        # Install profile with UUID filename
+        cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/${PROFILE_UUID}.mobileprovision
+        
+        # Also try direct installation via Xcode command
+        echo "🔧 Installing profile via Xcode..."
+        open -a "Xcode" $PP_PATH || echo "Xcode installation fallback failed"
         
         # List installed provisioning profiles
         echo "🔍 Installed provisioning profiles:"
@@ -209,16 +219,28 @@ jobs:
           exit 1
         fi
         
-        # Build using xcodebuild with correct provisioning profile
+        # Try building with automatic provisioning first (may work better)
+        echo "🔄 Attempting build with automatic provisioning..."
         xcodebuild -workspace Runner.xcworkspace \
           -scheme Runner \
           -configuration Release \
           -destination generic/platform=iOS \
           -archivePath Runner.xcarchive \
-          CODE_SIGN_STYLE=Manual \
+          CODE_SIGN_STYLE=Automatic \
           DEVELOPMENT_TEAM=QX8XC3CNTR \
-          PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
-          archive
+          archive || {
+            echo "❌ Automatic provisioning failed, trying manual..."
+            # Fallback to manual with explicit profile
+            xcodebuild -workspace Runner.xcworkspace \
+              -scheme Runner \
+              -configuration Release \
+              -destination generic/platform=iOS \
+              -archivePath Runner.xcarchive \
+              CODE_SIGN_STYLE=Manual \
+              DEVELOPMENT_TEAM=QX8XC3CNTR \
+              PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
+              archive
+          }
         
         echo "✅ iOS build completed"
     
