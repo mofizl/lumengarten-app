@@ -197,8 +197,17 @@ jobs:
         cd ios
         
         # Get the exact provisioning profile name from previous step
-        PROFILE_NAME=$(security cms -D -i ../build_pp.mobileprovision | grep -A 1 "Name" | tail -1 | sed 's/.*<string>//' | sed 's/<\/string>.*//' | xargs)
-        echo "🎯 Using provisioning profile: '$PROFILE_NAME'"
+        PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
+        echo "🔍 Looking for provisioning profile at: $PP_PATH"
+        
+        if [ -f "$PP_PATH" ]; then
+          PROFILE_NAME=$(security cms -D -i $PP_PATH | grep -A 1 "Name" | tail -1 | sed 's/.*<string>//' | sed 's/<\/string>.*//' | xargs)
+          echo "🎯 Found provisioning profile name: '$PROFILE_NAME'"
+        else
+          echo "❌ Provisioning profile not found at $PP_PATH"
+          ls -la $RUNNER_TEMP/
+          exit 1
+        fi
         
         # Build using xcodebuild with correct provisioning profile
         xcodebuild -workspace Runner.xcworkspace \
