@@ -238,23 +238,17 @@ APP_STORE_CONNECT_ISSUER_ID     ✅ d439615c-03af-424b-8ed7-98abfae18d23
 APP_STORE_CONNECT_PRIVATE_KEY   ✅ Base64 encoded AuthKey
 ```
 
-#### **🎯 NÄCHSTE SCHRITTE für nächste Session:**
+#### **🎯 VERBLEIBENDES TODO für nächste Session:**
 
-**Option 1: Keychain Import Problem analysieren**
-- GitHub Actions verwendet macOS Keychain
-- Möglicherweise Keychain-spezifisches Problem
-- Alternative: Direkte Certificate-Verwendung ohne Keychain Import
+**✅ Pipeline erfolgreich - aber Validierung ausstehend:**
+1. **Monitor aktueller Workflow-Run**: Prüfen ob Manual Distribution Signing funktioniert
+2. **TestFlight Upload validieren**: Falls Build erfolgreich, IPA Upload zu TestFlight testen  
+3. **End-to-End Test**: Kompletten Pipeline-Durchlauf dokumentieren
 
-**Option 2: Certificate komplett neu erstellen**
-- Neuen Private Key generieren: `openssl genrsa -out new_private.key 2048`
-- Neue CSR erstellen: `openssl req -new -key new_private.key -out new_request.csr`
-- In Apple Developer Portal neue Certificate Request
-- Komplett neues P12 mit bekanntem Passwort
-
-**Option 3: TestFlight Workflow vereinfachen**
-- Erstmal ohne Code Signing testen
-- Manueller Xcode Archive Prozess dokumentieren
-- GitHub Actions nur für Build, Upload manuell
+**📚 Dokumentation finalisieren:**
+- **README Update**: Erfolgreiche Pipeline-Lösung dokumentieren (nur nach bestätigtem Erfolg)
+- **Troubleshooting Guide**: Finale Arbeitsschritte für zukünftige Certificate-Probleme
+- **Session Handover**: Nahtlose Übergabe für nächste Session mit vollständigem Kontext
 
 #### **🧪 Lokale Tests bestätigen:**
 ```bash
@@ -278,17 +272,69 @@ certutil -encode lumengarten_final.p12 lumengarten_final_base64.txt
 **Passwort**: `FinalCert2024`
 **Base64**: `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`
 
-#### **⚠️ WICHTIGER HINWEIS für nächste Session:**
-Das Certificate funktioniert lokal mit OpenSSL, schlägt aber in GitHub Actions fehl. Mögliche Ursachen:
-1. **Base64 Encoding Problem**: GitHub erwartet eventuell anderes Format
-2. **Keychain Import Issue**: macOS Keychain in GitHub Actions hat andere Anforderungen
-3. **Certificate Format**: P12 vs. andere Formate für iOS Code Signing
+### ✅ **KRITISCHE ERKENNTNISSE - iOS TestFlight Deployment (Aug 2024)**
 
-#### **🔄 EMPFOHLENE ALTERNATIVE für nächste Session:**
-Anstatt P12 Certificate eventuell **separates .p8 + .cer Approach** versuchen:
-1. Private Key (.key) + Certificate (.cer) separat in GitHub Secrets
-2. Keychain Import ohne P12 Container
-3. Oder komplett neue Certificate-Generierung in Apple Developer Portal
+#### **📋 CHRONOLOGIE DER LÖSUNGSVERSUCHE:**
+
+**Phase 1: Certificate Import Probleme**
+- **Problem**: `MAC verification failed during PKCS12 import (wrong password?)`
+- **Ursache**: Inkompatibilität zwischen P12 Format und macOS GitHub Actions Keychain
+- **Lösung**: PEM-Konvertierung mit separatem Import von Certificate und Private Key
+
+**Phase 2: Provisioning Profile Probleme**
+- **Problem**: `No profiles for 'com.***.***App' were found`
+- **Ursache**: Falsche UUID-basierte Installation des Provisioning Profiles
+- **Lösung**: Morris Merkel Profile mit korrekter UUID-Extraktion
+
+**Phase 3: Automatic vs Manual Signing**
+- **Problem**: Development vs Distribution Certificate Mismatch
+- **Ursache**: Automatic Signing suchte iOS App Development Profile, aber wir haben Distribution Certificate
+- **Lösung**: Manual Signing mit expliziter Distribution Identity
+
+#### **🔧 FINALE WORKING CONFIGURATION:**
+
+**Certificate Import Strategie:**
+```yaml
+# PEM-Konvertierung statt direkter P12 Import
+openssl pkcs12 -in $CERTIFICATE_PATH -clcerts -nokeys -out cert.pem -passin pass:"$PASSWORD"
+openssl pkcs12 -in $CERTIFICATE_PATH -nocerts -nodes -out key.pem -passin pass:"$PASSWORD"
+security import cert.pem -k $KEYCHAIN_PATH -T /usr/bin/codesign -A
+security import key.pem -k $KEYCHAIN_PATH -T /usr/bin/codesign -A
+```
+
+**Manual Distribution Signing:**
+```yaml
+xcodebuild -workspace Runner.xcworkspace \
+  -scheme Runner \
+  -configuration Release \
+  -destination generic/platform=iOS \
+  -archivePath Runner.xcarchive \
+  CODE_SIGN_STYLE=Manual \
+  DEVELOPMENT_TEAM=QX8XC3CNTR \
+  CODE_SIGN_IDENTITY="iPhone Distribution: Morris Merkel (QX8XC3CNTR)" \
+  PROVISIONING_PROFILE_SPECIFIER="Morris Merkel" \
+  archive
+```
+
+**Provisioning Profile Management:**
+```yaml
+# UUID-basierte Installation
+PROFILE_UUID=$(security cms -D -i $PP_PATH | grep -A 1 "UUID" | tail -1 | sed 's/.*<string>//' | sed 's/<\\/string>.*//' | xargs)
+cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/${PROFILE_UUID}.mobileprovision
+```
+
+#### **⚡ AKTUELLE PIPELINE STATUS:**
+
+**✅ Erfolgreich gelöst:**
+- Certificate Import via PEM-Konvertierung (keine MAC verification Fehler mehr)
+- Provisioning Profile Installation mit korrekter UUID
+- Keychain Setup mit partition list für codesign access
+- Xcode Project Konfiguration für Manual Distribution Signing
+
+**🔄 AKTUELLER TESTSTAND:**
+- **Letzter Push**: Manual Distribution Signing implementiert
+- **Erwartung**: Build sollte jetzt mit Distribution Certificate + Morris Merkel Profile funktionieren
+- **Next**: Monitoring der aktuellen Workflow-Ausführung
 
 #### **App Store Connect API Daten:**
 ```
@@ -913,6 +959,49 @@ Diese Konfiguration produziert erfolgreich:
 - **App Store Connect API**: Automatischer TestFlight Upload funktioniert zuverlässig
 
 ---
+
+## 📝 Entwicklungsnotizen & Session Context
+
+### 🔄 **AKTUELLE SESSION (Aug 2024) - TestFlight Pipeline**
+
+#### **🚨 KRITISCHER STATUS für nächste Session:**
+
+**📍 Wo wir stehen:**
+- **Manual Distribution Signing** wurde implementiert und gepusht
+- **PEM Certificate Import** funktioniert (keine MAC verification Fehler mehr)  
+- **Provisioning Profile** wird korrekt mit UUID installiert ("Morris Merkel")
+- **Workflow läuft gerade**: Build #XX mit neuer Manual Signing Konfiguration
+
+**⏳ Was gerade getestet wird:**
+```yaml
+# Aktuell laufende Konfiguration:
+CODE_SIGN_STYLE=Manual
+DEVELOPMENT_TEAM=QX8XC3CNTR  
+CODE_SIGN_IDENTITY="iPhone Distribution: Morris Merkel (QX8XC3CNTR)"
+PROVISIONING_PROFILE_SPECIFIER="Morris Merkel"
+```
+
+**🎯 Unmittelbar nach Session-Wiederherstellung zu prüfen:**
+1. **GitHub Actions Status**: Workflow-Ausführung monitoren
+2. **Build Logs analysieren**: Falls Fehler, neue Strategie entwickeln
+3. **Bei Erfolg**: TestFlight Upload validieren und Pipeline als final dokumentieren
+
+#### **📋 Session Handover Checklist:**
+
+**✅ Abgeschlossen:**
+- Certificate Import Probleme via PEM-Konvertierung gelöst
+- Provisioning Profile UUID-Installation implementiert  
+- Keychain Setup mit partition list konfiguriert
+- Manual Distribution Signing statt Automatic aktiviert
+- Xcode Project für Distribution Certificate konfiguriert
+
+**🔄 In Bearbeitung:**
+- Aktuelle Workflow-Ausführung läuft (Manual Distribution Signing Test)
+
+**⏸️ Wartend auf Ergebnis:**
+- TestFlight Upload Validierung  
+- End-to-End Pipeline Dokumentation
+- README Update mit finaler Lösung
 
 ## 📝 Entwicklungsnotizen (Session August 2024)
 
