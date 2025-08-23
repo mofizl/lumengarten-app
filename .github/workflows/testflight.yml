@@ -54,21 +54,30 @@ jobs:
         echo "🔍 Testing certificate readability:"
         openssl pkcs12 -info -in $CERTIFICATE_PATH -passin pass:"$IOS_CERTIFICATE_PASSWORD" -noout || echo "❌ Certificate test failed"
         
-        # Download Apple Intermediate Certificate
+        # RESEARCHED SOLUTION: Use login keychain exclusively  
+        echo "🔓 Unlocking login keychain..."
+        security unlock-keychain -p "$KEYCHAIN_PASSWORD" ~/Library/Keychains/login.keychain-db
+        
+        # Download and import Apple Intermediate Certificate to login keychain
+        echo "🍎 Importing Apple Intermediate Certificate..."
         curl -o $RUNNER_TEMP/AppleWWDRCA.cer https://www.apple.com/certificateauthority/AppleWWDRCA.cer
-        security import $RUNNER_TEMP/AppleWWDRCA.cer -k $KEYCHAIN_PATH -T /usr/bin/codesign
+        security import $RUNNER_TEMP/AppleWWDRCA.cer -k ~/Library/Keychains/login.keychain-db -T /usr/bin/codesign -A
         
-        # RADICAL APPROACH: Skip custom certificate, use fastlane match or system approach
-        echo "🚨 SKIPPING CERTIFICATE IMPORT - Using system approach"
+        # Import P12 to login keychain  
+        echo "🔐 Importing iOS Distribution Certificate..."
+        security import $CERTIFICATE_PATH -P "$IOS_CERTIFICATE_PASSWORD" -k ~/Library/Keychains/login.keychain-db -T /usr/bin/codesign -T /usr/bin/security -A
         
-        # Just setup the provisioning profile and keychain
-        echo "🔍 System identities:"
-        security find-identity -v -p codesigning
+        # Set key partition list for codesigning
+        echo "🔧 Setting key partition list..."
+        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" ~/Library/Keychains/login.keychain-db
         
-        # Alternative: Create a simple signing identity programmatically
-        echo "🛠️ Setting up alternative signing..."
-        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-        security list-keychain -d user -s $KEYCHAIN_PATH
+        # Verify the import worked
+        echo "🔍 Available signing identities:"
+        security find-identity -v -s "iPhone Distribution" ~/Library/Keychains/login.keychain-db
+        security find-identity -v -p codesigning ~/Library/Keychains/login.keychain-db
+        
+        # Make sure login keychain is in search path
+        security list-keychains -d user -s ~/Library/Keychains/login.keychain-db
 
         # Apply provisioning profile
         mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
