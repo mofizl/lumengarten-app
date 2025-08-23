@@ -45,12 +45,22 @@ jobs:
         security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
         security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
 
+        # Debug: Check certificate file before import
+        echo "📋 Certificate file info:"
+        ls -la $CERTIFICATE_PATH
+        file $CERTIFICATE_PATH
+        
+        # Debug: Try to read certificate without importing
+        echo "🔍 Testing certificate readability:"
+        openssl pkcs12 -info -in $CERTIFICATE_PATH -passin pass:"$IOS_CERTIFICATE_PASSWORD" -noout || echo "❌ Certificate test failed"
+        
         # Download Apple Intermediate Certificate
         curl -o $RUNNER_TEMP/AppleWWDRCA.cer https://www.apple.com/certificateauthority/AppleWWDRCA.cer
         security import $RUNNER_TEMP/AppleWWDRCA.cer -k $KEYCHAIN_PATH -T /usr/bin/codesign
         
-        # Import our certificate to keychain
-        security import $CERTIFICATE_PATH -P "$IOS_CERTIFICATE_PASSWORD" -k $KEYCHAIN_PATH -T /usr/bin/codesign
+        # Import our certificate to keychain - try without -T flag first
+        echo "🔐 Importing certificate..."
+        security import $CERTIFICATE_PATH -P "$IOS_CERTIFICATE_PASSWORD" -k $KEYCHAIN_PATH -A
         security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
         security list-keychain -d user -s $KEYCHAIN_PATH
 
