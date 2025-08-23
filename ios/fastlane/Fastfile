@@ -56,9 +56,24 @@ platform :ios do
     ipa_path = File.expand_path("fastlane/builds/Lumengarten.ipa")
     UI.message("Created unsigned IPA at: #{ipa_path}")
     
+    # Debug environment variables
+    UI.message("🔍 Debug Environment Variables:")
+    UI.message("APP_STORE_CONNECT_API_KEY_ID: #{ENV['APP_STORE_CONNECT_API_KEY_ID']}")
+    UI.message("APP_STORE_CONNECT_API_KEY_PATH: #{ENV['APP_STORE_CONNECT_API_KEY_PATH']}")
+    
     # Verify IPA exists before upload
     if File.exist?(ipa_path)
       UI.message("✅ IPA file confirmed at: #{ipa_path}")
+      
+      # Check if API key file exists
+      api_key_path = ENV["APP_STORE_CONNECT_API_KEY_PATH"]
+      if api_key_path && File.exist?(api_key_path)
+        UI.message("✅ API Key file found at: #{api_key_path}")
+      else
+        UI.error("❌ API Key file not found at: #{api_key_path}")
+        sh("find .. -name 'AuthKey*.p8' -type f")
+      end
+      
       # Upload unsigned IPA to TestFlight - App Store Connect handles signing
       upload_to_testflight(
         api_key: {
