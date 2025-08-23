@@ -149,9 +149,18 @@ jobs:
         
         echo "✅ Code signing setup completed"
 
-    - name: Configure Xcode Project for Distribution  
+    - name: Configure Xcode Project for Distribution
       run: |
-        echo "✅ Xcode project configuration (simplified for YAML compatibility)"
+        cd ios
+        echo "Configuring Xcode project for iOS Distribution signing"
+        
+        # Update CODE_SIGN_IDENTITY for Release builds
+        sed -i '' 's/iPhone Developer/iOS Distribution/g' Runner.xcodeproj/project.pbxproj
+        
+        # Set manual signing and team ID
+        sed -i '' 's/CODE_SIGN_STYLE = Automatic/CODE_SIGN_STYLE = Manual/g' Runner.xcodeproj/project.pbxproj
+        
+        echo "✅ Xcode project configured for distribution"
     
     - name: Build iOS for App Store
       run: |
