@@ -15,13 +15,13 @@ platform :ios do
       lock_when_sleeps: false
     )
 
-    # Import certificates and profiles
-    import_certificate(
-      certificate_path: ENV["IOS_CERTIFICATE_PATH"],
-      certificate_password: ENV["IOS_CERTIFICATE_PASSWORD"],
-      keychain_name: "fastlane_tmp_keychain",
-      keychain_password: ENV["KEYCHAIN_PASSWORD"]
-    )
+    # Skip certificate import - try using API key only approach
+    # import_certificate(
+    #   certificate_path: ENV["IOS_CERTIFICATE_PATH"],
+    #   certificate_password: ENV["IOS_CERTIFICATE_PASSWORD"],
+    #   keychain_name: "fastlane_tmp_keychain",
+    #   keychain_password: ENV["KEYCHAIN_PASSWORD"]
+    # )
 
     install_provisioning_profile(
       path: ENV["IOS_PROVISIONING_PROFILE_PATH"]
@@ -42,14 +42,14 @@ platform :ios do
     # Build Flutter app
     sh("flutter build ios --release --no-codesign")
 
-    # Skip archive completely - use Flutter's IPA with manual signing
-    sh("cd .. && flutter build ipa --release --export-method=app-store")
+    # Create unsigned IPA archive manually
+    sh("cd ../build/ios/iphoneos && zip -r Runner.ipa Runner.app")
+    sh("mkdir -p fastlane/builds && mv ../build/ios/iphoneos/Runner.ipa fastlane/builds/Lumengarten.ipa")
     
-    # Find the Flutter-generated IPA 
-    ipa_path = Dir["../build/ios/ipa/*.ipa"].first
-    UI.message("Found Flutter IPA at: #{ipa_path}")
+    ipa_path = "fastlane/builds/Lumengarten.ipa"
+    UI.message("Created unsigned IPA at: #{ipa_path}")
     
-    # Upload to TestFlight using Flutter's IPA
+    # Upload unsigned IPA to TestFlight - App Store Connect handles signing
     upload_to_testflight(
       api_key_path: ENV["APP_STORE_CONNECT_API_KEY_PATH"],
       skip_waiting_for_build_processing: true,
