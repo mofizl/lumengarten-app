@@ -37,8 +37,8 @@ jobs:
         KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
 
         # Import certificate and provisioning profile from secrets
-        echo -n "$IOS_CERTIFICATE_BASE64" | base64 --decode > $CERTIFICATE_PATH
-        echo -n "$IOS_PROVISIONING_PROFILE_BASE64" | base64 --decode > $PP_PATH
+        echo -n "$IOS_CERTIFICATE_BASE64" | base64 -D > $CERTIFICATE_PATH
+        echo -n "$IOS_PROVISIONING_PROFILE_BASE64" | base64 -D > $PP_PATH
 
         # Create temporary keychain
         security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
@@ -104,7 +104,7 @@ jobs:
           
           # Create App Store Connect API key
           mkdir -p ~/.appstoreconnect/private_keys/
-          echo -n "$APP_STORE_CONNECT_PRIVATE_KEY" | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_$APP_STORE_CONNECT_API_KEY_ID.p8
+          echo -n "$APP_STORE_CONNECT_PRIVATE_KEY" | base64 -D > ~/.appstoreconnect/private_keys/AuthKey_$APP_STORE_CONNECT_API_KEY_ID.p8
           
           # Upload to TestFlight
           echo "🚀 Uploading to TestFlight..."
