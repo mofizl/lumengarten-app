@@ -162,7 +162,14 @@ jobs:
         # List installed provisioning profiles
         echo "🔍 Installed provisioning profiles:"
         ls -la ~/Library/MobileDevice/Provisioning\ Profiles/
-        security cms -D -i $PP_PATH | grep -A 5 -B 5 "Name\|UUID"
+        
+        # Show profile details
+        echo "📋 Provisioning profile details:"
+        security cms -D -i $PP_PATH | head -50
+        
+        # Extract exact profile name
+        PROFILE_NAME=$(security cms -D -i $PP_PATH | grep -A 1 "Name" | tail -1 | sed 's/.*<string>//' | sed 's/<\/string>.*//')
+        echo "🎯 Exact profile name: '$PROFILE_NAME'"
         
         # Verify setup
         echo "🔍 Verification - Available signing identities:"
@@ -189,7 +196,11 @@ jobs:
         echo "Building with xcodebuild for Distribution certificate compatibility..."
         cd ios
         
-        # Build using xcodebuild with explicit provisioning profile
+        # Get the exact provisioning profile name from previous step
+        PROFILE_NAME=$(security cms -D -i ../build_pp.mobileprovision | grep -A 1 "Name" | tail -1 | sed 's/.*<string>//' | sed 's/<\/string>.*//' | xargs)
+        echo "🎯 Using provisioning profile: '$PROFILE_NAME'"
+        
+        # Build using xcodebuild with correct provisioning profile
         xcodebuild -workspace Runner.xcworkspace \
           -scheme Runner \
           -configuration Release \
@@ -197,7 +208,7 @@ jobs:
           -archivePath Runner.xcarchive \
           CODE_SIGN_STYLE=Manual \
           DEVELOPMENT_TEAM=QX8XC3CNTR \
-          PROVISIONING_PROFILE_SPECIFIER="Lumengarten AppStore" \
+          PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
           archive
         
         echo "✅ iOS build completed"
