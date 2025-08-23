@@ -34,70 +34,68 @@ jobs:
         # Create variables
         CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
         PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
-        KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
+        KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain-db
 
         # Import certificate and provisioning profile from secrets
         echo -n "$IOS_CERTIFICATE_BASE64" | base64 -D > $CERTIFICATE_PATH
         echo -n "$IOS_PROVISIONING_PROFILE_BASE64" | base64 -D > $PP_PATH
 
-        # Create temporary keychain
-        security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-        security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-        security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-
-        # Debug: Check certificate file before import
-        echo "📋 Certificate file info:"
+        # Validate certificate file
+        echo "📋 Certificate validation:"
         ls -la $CERTIFICATE_PATH
-        file $CERTIFICATE_PATH
+        openssl pkcs12 -info -in $CERTIFICATE_PATH -passin pass:"$IOS_CERTIFICATE_PASSWORD" -noout
         
-        # Debug: Try to read certificate without importing
-        echo "🔍 Testing certificate readability:"
-        openssl pkcs12 -info -in $CERTIFICATE_PATH -passin pass:"$IOS_CERTIFICATE_PASSWORD" -noout || echo "❌ Certificate test failed"
+        # RESEARCHED APPROACH: Create dedicated build keychain 
+        echo "🔐 Creating and configuring build keychain..."
+        security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+        security default-keychain -s $KEYCHAIN_PATH
+        security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+        security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
         
-        # RESEARCHED SOLUTION: Use login keychain exclusively  
-        echo "🔓 Unlocking login keychain..."
-        security unlock-keychain -p "$KEYCHAIN_PASSWORD" ~/Library/Keychains/login.keychain-db
+        # Import certificate to build keychain
+        echo "📥 Importing certificate to build keychain..."
+        security import $CERTIFICATE_PATH -k $KEYCHAIN_PATH -P "$IOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
         
-        # Skip problematic Apple Intermediate Certificate - try without it first
-        echo "⏭️ Skipping Apple Intermediate Certificate (causing format error)"
+        # CRITICAL: Set partition list for macOS 10.12.5+ compatibility
+        echo "🔧 Setting partition list for codesign access..."
+        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
         
-        # Import P12 to login keychain  
-        echo "🔐 Importing iOS Distribution Certificate..."
-        echo "🔍 Debug: Certificate password length: ${#IOS_CERTIFICATE_PASSWORD}"
-        echo "🔍 Debug: Certificate password first 3 chars: ${IOS_CERTIFICATE_PASSWORD:0:3}..."
-        
-        # Convert P12 to individual PEM files (security tool compatibility)
-        echo "🔄 Converting P12 to PEM components..."
-        openssl pkcs12 -in $CERTIFICATE_PATH -clcerts -nokeys -out $RUNNER_TEMP/cert.pem -passin pass:"$IOS_CERTIFICATE_PASSWORD"
-        openssl pkcs12 -in $CERTIFICATE_PATH -nocerts -nodes -out $RUNNER_TEMP/key.pem -passin pass:"$IOS_CERTIFICATE_PASSWORD"
-        
-        # Import PEM files separately
-        echo "🔐 Importing certificate..."
-        security import $RUNNER_TEMP/cert.pem -k ~/Library/Keychains/login.keychain-db -T /usr/bin/codesign -A
-        echo "🔑 Importing private key..."  
-        security import $RUNNER_TEMP/key.pem -k ~/Library/Keychains/login.keychain-db -T /usr/bin/codesign -A
-        
-        # Skip partition list setup - certificates are already imported and accessible
-        echo "✅ Certificates imported successfully, skipping partition list setup"
-        
-        # Verify the import worked
-        echo "🔍 Available signing identities:"
-        security find-identity -v -s "iPhone Distribution" ~/Library/Keychains/login.keychain-db
-        security find-identity -v -p codesigning ~/Library/Keychains/login.keychain-db
-        
-        # Make sure login keychain is in search path
-        security list-keychains -d user -s ~/Library/Keychains/login.keychain-db
-
         # Apply provisioning profile
+        echo "📱 Installing provisioning profile..."
         mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-        cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
+        cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
+        
+        # Verify setup
+        echo "🔍 Verification - Available signing identities:"
+        security find-identity -v -p codesigning $KEYCHAIN_PATH
         
         echo "✅ Code signing setup completed"
     
+    - name: Configure Xcode Project for Distribution  
+      run: |
+        cd ios
+        
+        # Update Xcode project to use iOS Distribution certificate for Release
+        sed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=iphoneos\*\]" = "iPhone Developer"/"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iOS Distribution"/g' Runner.xcodeproj/project.pbxproj
+        
+        # Set Development Team ID
+        sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;\
+				DEVELOPMENT_TEAM = QX8XC3CNTR;/g' Runner.xcodeproj/project.pbxproj
+        
+        # Verify changes
+        grep -n "CODE_SIGN_IDENTITY\|DEVELOPMENT_TEAM\|CODE_SIGN_STYLE" Runner.xcodeproj/project.pbxproj
+        
+        echo "✅ Xcode project configured for distribution"
+    
     - name: Build iOS for App Store
       run: |
-        # Build iOS app for App Store distribution
-        flutter build ios --release
+        # Set environment for distribution build
+        export FLUTTER_BUILD_MODE=release
+        
+        # Build iOS app for App Store distribution with explicit codesign configuration
+        flutter build ios --release \
+          --build-name=1.0.0 \
+          --build-number=${{ github.run_number }}
         
         echo "✅ iOS build completed"
     
