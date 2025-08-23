@@ -102,7 +102,10 @@ jobs:
         cache: true
     
     - name: Get dependencies
-      run: flutter pub get
+      run: |
+        flutter pub get
+        cd ios
+        pod install
     
     - name: Setup iOS Code Signing
       env:
@@ -155,6 +158,11 @@ jobs:
         echo "📱 Installing provisioning profile..."
         mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
         cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
+        
+        # List installed provisioning profiles
+        echo "🔍 Installed provisioning profiles:"
+        ls -la ~/Library/MobileDevice/Provisioning\ Profiles/
+        security cms -D -i $PP_PATH | grep -A 5 -B 5 "Name\|UUID"
         
         # Verify setup
         echo "🔍 Verification - Available signing identities:"
