@@ -144,8 +144,7 @@ class _LandingPageState extends ConsumerState<LandingPage>
     
     // Phase 5: Aufruf zur Hilfe
     setState(() {
-      _currentStoryText = "Hallo! Ich bin Dunki, der Gartendrachen! "
-                         "Hilfst du mir, das Licht zurückzubringen?";
+      _currentStoryText = "Hallo! Ich bin Dunki! Hilfst du mir?";
     });
     _speakText(_currentStoryText);
     
