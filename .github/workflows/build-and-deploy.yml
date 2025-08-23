@@ -89,7 +89,7 @@ jobs:
         path: build/app/outputs/bundle/release/app-release.aab
 
   # iOS TestFlight Deployment with Fastlane
-  ios:
+  testflight:
     runs-on: macos-14
     
     steps:
