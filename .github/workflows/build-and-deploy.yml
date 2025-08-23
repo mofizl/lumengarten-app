@@ -140,6 +140,10 @@ jobs:
         IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
         KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+        APP_STORE_CONNECT_API_KEY_PATH: ${{ env.APP_STORE_CONNECT_API_KEY_PATH }}
+        DEVELOPMENT_TEAM: ${{ env.DEVELOPMENT_TEAM }}
+        IOS_CERTIFICATE_PATH: ${{ env.IOS_CERTIFICATE_PATH }}
+        IOS_PROVISIONING_PROFILE_PATH: ${{ env.IOS_PROVISIONING_PROFILE_PATH }}
       run: |
         cd ios
         bundle exec fastlane testflight
