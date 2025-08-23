@@ -976,4 +976,5 @@ Diese Konfiguration produziert erfolgreich:
 > Bei Fragen oder Anregungen: [GitHub Issues](https://github.com/mofizl/lumengarten-app/issues) oder kontaktiere das Entwickler-Team.
 #   T e s t   c o m m i t  
  #   T e s t   c o m m i t  
+ #   T r i g g e r   T e s t F l i g h t  
  
