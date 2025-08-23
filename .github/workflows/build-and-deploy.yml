@@ -187,26 +187,18 @@ jobs:
         
         echo "✅ Code signing setup completed"
 
-    - name: Configure Xcode Project for Hybrid Signing
+    - name: Configure Xcode Project for Automatic Signing
       run: |
         cd ios
-        echo "Configuring Xcode project for hybrid signing (Runner=Manual, Pods=Automatic)"
+        echo "Configuring Xcode project for simple automatic signing"
         
-        # Set manual signing ONLY for Runner target (not globally)
-        # This prevents CocoaPods targets from inheriting manual provisioning
-        sed -i '' '/Runner.*Release.*{/,/}/ s/CODE_SIGN_STYLE = Automatic/CODE_SIGN_STYLE = Manual/g' Runner.xcodeproj/project.pbxproj
+        # Set automatic signing for all targets
+        sed -i '' 's/CODE_SIGN_STYLE = Manual/CODE_SIGN_STYLE = Automatic/g' Runner.xcodeproj/project.pbxproj
         
-        # Set development team for all targets
+        # Set development team
         sed -i '' 's/DEVELOPMENT_TEAM = "";/DEVELOPMENT_TEAM = QX8XC3CNTR;/g' Runner.xcodeproj/project.pbxproj
         
-        # Set Distribution identity ONLY for Runner target
-        sed -i '' '/Runner.*Release.*{/,/}/ s/CODE_SIGN_IDENTITY = "[^"]*"/CODE_SIGN_IDENTITY = "iPhone Distribution"/g' Runner.xcodeproj/project.pbxproj
-        
-        # Ensure Pods targets stay Automatic
-        echo "Verifying Pods targets remain Automatic..."
-        grep -A 10 -B 10 "CODE_SIGN_STYLE" Runner.xcodeproj/project.pbxproj | head -20
-        
-        echo "✅ Xcode project configured for hybrid signing"
+        echo "✅ Xcode project configured for automatic signing"
     
     - name: Build iOS for App Store
       run: |
@@ -227,19 +219,15 @@ jobs:
           exit 1
         fi
         
-        # Build with hybrid signing: Manual for Runner, Automatic for Pods
-        echo "🔄 Building with hybrid signing (Runner=Manual, Pods=Automatic)..."
+        # Build with simple automatic signing - let Xcode handle everything
+        echo "🔄 Building with automatic signing and allowProvisioningUpdates..."
         xcodebuild -workspace Runner.xcworkspace \
           -scheme Runner \
           -configuration Release \
           -destination generic/platform=iOS \
           -archivePath Runner.xcarchive \
           -allowProvisioningUpdates \
-          CODE_SIGN_STYLE=Manual \
           DEVELOPMENT_TEAM=QX8XC3CNTR \
-          CODE_SIGN_IDENTITY="iPhone Distribution: Morris Merkel (QX8XC3CNTR)" \
-          PROVISIONING_PROFILE_SPECIFIER="Morris Merkel" \
-          OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH" \
           archive
         
         echo "✅ iOS build completed"
