@@ -107,6 +107,7 @@ class VoiceService {
       'Doch plötzlich... Ein dunkler Schatten zog über das Land! ⚡': 'sounds/story/story_03_dark_shadow.mp3',
       'Ein böser Zauberer hat alle Lichtblumen gestohlen! 😢': 'sounds/story/story_04_stolen_flowers.mp3',
       'Hallo! Ich bin Dunki, der Gartendrachen! Hilfst du mir, das Licht zurückzubringen?': 'sounds/story/story_05_call_for_help.mp3',
+      'Hallo! Ich bin Dunki! Hilfst du mir?': 'sounds/story/story_05_call_for_help.mp3',
       
       // Lernbereich-Karten
       'Lese-Abenteuer. Magische Geschichten.': 'sounds/cards/reading_adventure.mp3',

@@ -173,17 +173,17 @@ class _GardenPageState extends ConsumerState<GardenPage>
                 child: FadeTransition(
                   opacity: _cardsStaggerAnimation,
                   child: SizedBox(
-                    height: 200,
+                    height: 280,
                     child: GridView.count(
                       crossAxisCount: 2,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 1.2,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childAspectRatio: 1.0,
                       physics: const NeverScrollableScrollPhysics(),
                       children: [
                         _buildFloatingLearningCard(
                           title: 'Lese-Abenteuer',
-                          emoji: '📚',
+                          iconPath: 'assets/images/icons/reading_magic.png',
                           description: 'Magische Geschichten',
                           progress: 0.2,
                           color: AppTheme.primaryBlue,
@@ -197,7 +197,7 @@ class _GardenPageState extends ConsumerState<GardenPage>
                         ),
                         _buildFloatingLearningCard(
                           title: 'Schreib-Werkstatt', 
-                          emoji: '✏️',
+                          iconPath: 'assets/images/icons/writing_magic.png',
                           description: 'Zauberhafte Buchstaben',
                           progress: 0.1,
                           color: AppTheme.magicGreen,
@@ -211,7 +211,7 @@ class _GardenPageState extends ConsumerState<GardenPage>
                         ),
                         _buildFloatingLearningCard(
                           title: 'Logik-Labor',
-                          emoji: '🧪', 
+                          iconPath: 'assets/images/icons/logic_magic.png',
                           description: 'Clevere Rätsel',
                           progress: 0.0,
                           color: AppTheme.lightPurple,
@@ -225,7 +225,7 @@ class _GardenPageState extends ConsumerState<GardenPage>
                         ),
                         _buildFloatingLearningCard(
                           title: 'Zahlen-Zoo',
-                          emoji: '🦁',
+                          iconPath: 'assets/images/icons/math_magic.png',
                           description: 'Tierische Mathematik',
                           progress: 0.0,
                           color: AppTheme.starYellow,
@@ -251,7 +251,7 @@ class _GardenPageState extends ConsumerState<GardenPage>
 
   Widget _buildFloatingLearningCard({
     required String title,
-    required String emoji,
+    required String iconPath,
     required String description,
     required double progress,
     required Color color,
@@ -302,11 +302,31 @@ class _GardenPageState extends ConsumerState<GardenPage>
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          emoji,
-                          style: const TextStyle(fontSize: 28),
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(15),
+                            child: Image.asset(
+                              iconPath,
+                              width: 40,
+                              height: 40,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Icon(
+                                  Icons.school,
+                                  size: 40,
+                                  color: color,
+                                );
+                              },
+                            ),
+                          ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 8),
                         Text(
                           title,
                           style: const TextStyle(

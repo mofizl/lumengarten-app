@@ -461,13 +461,17 @@ class _LandingPageState extends ConsumerState<LandingPage>
                                         ),
                                       ),
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: AppTheme.primaryBlue.withOpacity(0.9),
+                                        backgroundColor: AppTheme.magicGreen.withOpacity(0.8),
                                         foregroundColor: AppTheme.white,
                                         minimumSize: const Size(180, 50),
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(25),
+                                          side: BorderSide(
+                                            color: AppTheme.magicGreen.withOpacity(0.3),
+                                            width: 2,
+                                          ),
                                         ),
-                                        elevation: 8,
+                                        elevation: 4,
                                       ),
                                     ),
                                   ),
