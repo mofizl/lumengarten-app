@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/services/progress_service.dart';
 import '../../core/services/voice_service.dart';
 
 class LandingPage extends ConsumerStatefulWidget {
@@ -26,8 +25,8 @@ class _LandingPageState extends ConsumerState<LandingPage>
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
   late Animation<Offset> _slideAnimation;
-  late Animation<double> _pulseAnimation;
   late Animation<double> _storyAnimation;
+  late Animation<double> _pulseAnimation;
   late Animation<double> _corruptionAnimation;
   
   bool _showBeautifulGarden = true;

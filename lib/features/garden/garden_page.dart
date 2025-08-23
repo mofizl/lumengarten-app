@@ -22,7 +22,6 @@ class _GardenPageState extends ConsumerState<GardenPage>
   final VoiceService _voiceService = VoiceService();
   
   late Animation<double> _headerFadeAnimation;
-  late Animation<Offset> _headerSlideAnimation;
   late Animation<double> _cardsStaggerAnimation;
   late Animation<double> _floatingAnimation;
 
@@ -49,10 +48,6 @@ class _GardenPageState extends ConsumerState<GardenPage>
     _headerFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _headerController, curve: Curves.easeInOut),
     );
-    _headerSlideAnimation = Tween<Offset>(
-      begin: const Offset(0, -0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _headerController, curve: Curves.easeOutBack));
     _cardsStaggerAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _cardsController, curve: Curves.easeOutCubic),
     );
@@ -172,7 +167,7 @@ class _GardenPageState extends ConsumerState<GardenPage>
               child: SafeArea(
                 child: FadeTransition(
                   opacity: _cardsStaggerAnimation,
-                  child: Container(
+                  child: SizedBox(
                     height: 450,
                     child: GridView.count(
                       crossAxisCount: 2,
@@ -191,7 +186,7 @@ class _GardenPageState extends ConsumerState<GardenPage>
                           onTap: () {
                             _voiceService.speak('Lese-Abenteuer. Magische Geschichten.');
                             Future.delayed(const Duration(milliseconds: 1500), () {
-                              context.go('/games/reading');
+                              if (mounted) context.go('/games/reading');
                             });
                           },
                         ),
@@ -205,7 +200,7 @@ class _GardenPageState extends ConsumerState<GardenPage>
                           onTap: () {
                             _voiceService.speak('Schreib-Werkstatt. Zauberhafte Buchstaben.');
                             Future.delayed(const Duration(milliseconds: 1500), () {
-                              context.go('/games/writing');
+                              if (mounted) context.go('/games/writing');
                             });
                           },
                         ),
@@ -219,7 +214,7 @@ class _GardenPageState extends ConsumerState<GardenPage>
                           onTap: () {
                             _voiceService.speak('Logik-Labor. Clevere Rätsel.');
                             Future.delayed(const Duration(milliseconds: 1500), () {
-                              context.go('/games/logic');
+                              if (mounted) context.go('/games/logic');
                             });
                           },
                         ),
@@ -233,7 +228,7 @@ class _GardenPageState extends ConsumerState<GardenPage>
                           onTap: () {
                             _voiceService.speak('Zahlen-Zoo. Tierische Mathematik.');
                             Future.delayed(const Duration(milliseconds: 1500), () {
-                              context.go('/games/math');
+                              if (mounted) context.go('/games/math');
                             });
                           },
                         ),

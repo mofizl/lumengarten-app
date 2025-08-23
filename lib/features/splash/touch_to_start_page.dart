@@ -70,7 +70,7 @@ class _TouchToStartPageState extends ConsumerState<TouchToStartPage>
       await _voiceService.speak('Willkommen in Dunkis Lumengarten!');
     } catch (e) {
       // Bei Problemen mit Audio einfach weiter
-      print('Audio test failed: $e');
+      // Audio test failed silently in production
     }
     
     // Kurz warten, dann zur Landing Page navigieren
