@@ -61,7 +61,11 @@ platform :ios do
       UI.message("✅ IPA file confirmed at: #{ipa_path}")
       # Upload unsigned IPA to TestFlight - App Store Connect handles signing
       upload_to_testflight(
-        api_key_path: ENV["APP_STORE_CONNECT_API_KEY_PATH"],
+        api_key: {
+          key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
+          issuer_id: "d439615c-03af-424b-8ed7-98abfae18d23",
+          key_filepath: ENV["APP_STORE_CONNECT_API_KEY_PATH"]
+        },
         skip_waiting_for_build_processing: true,
         ipa: ipa_path
       )
