@@ -58,10 +58,8 @@ jobs:
         echo "🔓 Unlocking login keychain..."
         security unlock-keychain -p "$KEYCHAIN_PASSWORD" ~/Library/Keychains/login.keychain-db
         
-        # Download and import Apple Intermediate Certificate to login keychain
-        echo "🍎 Importing Apple Intermediate Certificate..."
-        curl -o $RUNNER_TEMP/AppleWWDRCA.cer https://www.apple.com/certificateauthority/AppleWWDRCA.cer
-        security import $RUNNER_TEMP/AppleWWDRCA.cer -k ~/Library/Keychains/login.keychain-db -T /usr/bin/codesign -A
+        # Skip problematic Apple Intermediate Certificate - try without it first
+        echo "⏭️ Skipping Apple Intermediate Certificate (causing format error)"
         
         # Import P12 to login keychain  
         echo "🔐 Importing iOS Distribution Certificate..."
