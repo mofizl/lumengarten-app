@@ -42,29 +42,18 @@ platform :ios do
     # Build Flutter app
     sh("flutter build ios --release --no-codesign")
 
-    # Build and archive with allowProvisioningUpdates
-    build_app(
-      workspace: "Runner.xcworkspace",
-      scheme: "Runner",
-      configuration: "Release",
-      export_method: "app-store",
-      export_options: {
-        method: "app-store",
-        teamID: ENV["DEVELOPMENT_TEAM"],
-        provisioningProfiles: {
-          ENV["BUNDLE_IDENTIFIER"] => ENV["PROVISIONING_PROFILE_NAME"]
-        }
-      },
-      xcargs: "-allowProvisioningUpdates",
-      output_directory: "./fastlane/builds",
-      output_name: "Lumengarten.ipa"
-    )
-
-    # Upload to TestFlight
+    # Skip archive completely - use Flutter's IPA with manual signing
+    sh("cd .. && flutter build ipa --release --export-method=app-store")
+    
+    # Find the Flutter-generated IPA 
+    ipa_path = Dir["../build/ios/ipa/*.ipa"].first
+    UI.message("Found Flutter IPA at: #{ipa_path}")
+    
+    # Upload to TestFlight using Flutter's IPA
     upload_to_testflight(
       api_key_path: ENV["APP_STORE_CONNECT_API_KEY_PATH"],
       skip_waiting_for_build_processing: true,
-      ipa: "./fastlane/builds/Lumengarten.ipa"
+      ipa: ipa_path
     )
 
     # Cleanup
