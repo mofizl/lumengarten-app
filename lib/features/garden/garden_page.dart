@@ -375,13 +375,11 @@ class _GardenPageState extends ConsumerState<GardenPage>
                           color: Colors.white,
                         ),
                       ),
-                      ],
-                    ),
+                    ],
                   ),
                 ),
               ),
             ),
-          ),
         );
       },
     );
