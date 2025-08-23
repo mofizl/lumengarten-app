@@ -33,6 +33,12 @@ platform :ios do
       teamid: ENV["DEVELOPMENT_TEAM"]
     )
 
+    # Install CocoaPods dependencies first
+    cocoapods(
+      clean_install: true,
+      repo_update: true
+    )
+
     # Build Flutter app
     sh("flutter build ios --release --no-codesign")
 

@@ -104,8 +104,6 @@ jobs:
     - name: Get dependencies
       run: |
         flutter pub get
-        cd ios
-        pod install
     
     - name: Setup Ruby and Fastlane
       run: |
