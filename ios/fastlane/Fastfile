@@ -52,15 +52,23 @@ platform :ios do
     sh("cd ../../build/ios/iphoneos && zip -r Runner.ipa Runner.app")
     sh("mkdir -p fastlane/builds && mv ../../build/ios/iphoneos/Runner.ipa fastlane/builds/Lumengarten.ipa")
     
-    ipa_path = "fastlane/builds/Lumengarten.ipa"
+    # Get absolute path to the IPA
+    ipa_path = File.expand_path("fastlane/builds/Lumengarten.ipa")
     UI.message("Created unsigned IPA at: #{ipa_path}")
     
-    # Upload unsigned IPA to TestFlight - App Store Connect handles signing
-    upload_to_testflight(
-      api_key_path: ENV["APP_STORE_CONNECT_API_KEY_PATH"],
-      skip_waiting_for_build_processing: true,
-      ipa: ipa_path
-    )
+    # Verify IPA exists before upload
+    if File.exist?(ipa_path)
+      UI.message("✅ IPA file confirmed at: #{ipa_path}")
+      # Upload unsigned IPA to TestFlight - App Store Connect handles signing
+      upload_to_testflight(
+        api_key_path: ENV["APP_STORE_CONNECT_API_KEY_PATH"],
+        skip_waiting_for_build_processing: true,
+        ipa: ipa_path
+      )
+    else
+      UI.error("❌ IPA file not found at: #{ipa_path}")
+      sh("ls -la fastlane/builds/")
+    end
 
     # Cleanup
     delete_keychain(name: "fastlane_tmp_keychain")
