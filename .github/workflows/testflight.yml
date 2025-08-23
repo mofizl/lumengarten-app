@@ -64,9 +64,13 @@ jobs:
         # Import P12 to login keychain  
         echo "🔐 Importing iOS Distribution Certificate..."
         echo "🔍 Debug: Certificate password length: ${#IOS_CERTIFICATE_PASSWORD}"
+        echo "🔍 Debug: Certificate password first 3 chars: ${IOS_CERTIFICATE_PASSWORD:0:3}..."
         
-        # Try with the password we know works
-        security import $CERTIFICATE_PATH -P "TestFlight2024" -k ~/Library/Keychains/login.keychain-db -T /usr/bin/codesign -T /usr/bin/security -A
+        # Try with environment variable (should work if secret is correct)
+        security import $CERTIFICATE_PATH -P "$IOS_CERTIFICATE_PASSWORD" -k ~/Library/Keychains/login.keychain-db -T /usr/bin/codesign -T /usr/bin/security -A || {
+          echo "⚠️ Environment variable failed, trying hardcoded password..."
+          security import $CERTIFICATE_PATH -P "TestFlight2024" -k ~/Library/Keychains/login.keychain-db -T /usr/bin/codesign -T /usr/bin/security -A
+        }
         
         # Set key partition list for codesigning
         echo "🔧 Setting key partition list..."
