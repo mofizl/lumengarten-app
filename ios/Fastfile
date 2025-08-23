@@ -1,0 +1,66 @@
+# Fastfile for Lumengarten iOS TestFlight Deployment
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Build and upload to TestFlight"
+  lane :testflight do
+    # Setup temporary keychain for CI
+    create_keychain(
+      name: "fastlane_tmp_keychain",
+      password: ENV["KEYCHAIN_PASSWORD"],
+      default_keychain: false,
+      unlock: true,
+      timeout: 3600,
+      lock_when_sleeps: false
+    )
+
+    # Import certificates and profiles
+    import_certificate(
+      certificate_path: ENV["IOS_CERTIFICATE_PATH"],
+      certificate_password: ENV["IOS_CERTIFICATE_PASSWORD"],
+      keychain_name: "fastlane_tmp_keychain",
+      keychain_password: ENV["KEYCHAIN_PASSWORD"]
+    )
+
+    install_provisioning_profile(
+      path: ENV["IOS_PROVISIONING_PROFILE_PATH"]
+    )
+
+    # Update project settings for distribution
+    update_project_team(
+      path: "Runner.xcodeproj",
+      teamid: ENV["DEVELOPMENT_TEAM"]
+    )
+
+    # Build Flutter app
+    sh("flutter build ios --release --no-codesign")
+
+    # Build and archive
+    build_app(
+      workspace: "Runner.xcworkspace",
+      scheme: "Runner",
+      configuration: "Release",
+      export_method: "app-store",
+      export_options: {
+        method: "app-store",
+        teamID: ENV["DEVELOPMENT_TEAM"],
+        provisioningProfiles: {
+          ENV["BUNDLE_IDENTIFIER"] => ENV["PROVISIONING_PROFILE_NAME"]
+        }
+      },
+      output_directory: "./fastlane/builds",
+      output_name: "Lumengarten.ipa"
+    )
+
+    # Upload to TestFlight
+    upload_to_testflight(
+      api_key_path: ENV["APP_STORE_CONNECT_API_KEY_PATH"],
+      skip_waiting_for_build_processing: true,
+      ipa: "./fastlane/builds/Lumengarten.ipa"
+    )
+
+    # Cleanup
+    delete_keychain(name: "fastlane_tmp_keychain")
+  end
+end
