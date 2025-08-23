@@ -23,9 +23,10 @@ class _LandingPageState extends ConsumerState<LandingPage>
   final VoiceService _voiceService = VoiceService();
   
   late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _storyAnimation;
+  // Animations currently not used but kept for future features
+  // late Animation<double> _scaleAnimation;
+  // late Animation<Offset> _slideAnimation; 
+  // late Animation<double> _storyAnimation;
   late Animation<double> _pulseAnimation;
   late Animation<double> _corruptionAnimation;
   
@@ -65,21 +66,22 @@ class _LandingPageState extends ConsumerState<LandingPage>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
     );
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
-    );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.5),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOutBack));
+    // Future animations - currently commented out
+    // _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+    //   CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
+    // );
+    // _slideAnimation = Tween<Offset>(
+    //   begin: const Offset(0, 0.5),
+    //   end: Offset.zero,
+    // ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOutBack));
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
     
-    // Story-Animationen für die dramatische Sequenz
-    _storyAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _storyController, curve: Curves.easeInOut),
-    );
+    // Story-Animationen für die dramatische Sequenz - currently commented
+    // _storyAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    //   CurvedAnimation(parent: _storyController, curve: Curves.easeInOut),
+    // );
     _corruptionAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _storyController, 
