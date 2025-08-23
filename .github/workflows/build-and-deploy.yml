@@ -190,20 +190,19 @@ jobs:
     - name: Configure Xcode Project for Distribution
       run: |
         cd ios
-        echo "Configuring Xcode project for flexible code signing"
+        echo "Configuring Xcode project for manual Distribution signing"
         
-        # Remove any hardcoded CODE_SIGN_IDENTITY to allow flexible signing
-        sed -i '' 's/CODE_SIGN_IDENTITY\[sdk=iphoneos\*\] = "[^"]*";//g' Runner.xcodeproj/project.pbxproj
-        sed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=iphoneos\*\]" = "[^"]*";//g' Runner.xcodeproj/project.pbxproj
-        
-        # Ensure automatic signing is set as default
-        sed -i '' 's/CODE_SIGN_STYLE = Manual/CODE_SIGN_STYLE = Automatic/g' Runner.xcodeproj/project.pbxproj
+        # Set manual signing for Distribution
+        sed -i '' 's/CODE_SIGN_STYLE = Automatic/CODE_SIGN_STYLE = Manual/g' Runner.xcodeproj/project.pbxproj
         
         # Set development team
         sed -i '' 's/DEVELOPMENT_TEAM = "";/DEVELOPMENT_TEAM = QX8XC3CNTR;/g' Runner.xcodeproj/project.pbxproj
         sed -i '' '/DEVELOPMENT_TEAM = QX8XC3CNTR;/!s/DEVELOPMENT_TEAM = /DEVELOPMENT_TEAM = QX8XC3CNTR; \/\/ /g' Runner.xcodeproj/project.pbxproj
         
-        echo "✅ Xcode project configured for flexible signing"
+        # Set Distribution code signing identity
+        sed -i '' 's/CODE_SIGN_IDENTITY = "[^"]*"/CODE_SIGN_IDENTITY = "iPhone Distribution"/g' Runner.xcodeproj/project.pbxproj
+        
+        echo "✅ Xcode project configured for manual Distribution signing"
     
     - name: Build iOS for App Store
       run: |
@@ -224,16 +223,17 @@ jobs:
           exit 1
         fi
         
-        # Build with automatic provisioning (should work now with clean project config)
-        echo "🔄 Building with automatic provisioning..."
+        # Build with manual provisioning using Distribution certificate and profile
+        echo "🔄 Building with manual provisioning for Distribution..."
         xcodebuild -workspace Runner.xcworkspace \
           -scheme Runner \
           -configuration Release \
           -destination generic/platform=iOS \
           -archivePath Runner.xcarchive \
-          -allowProvisioningUpdates \
-          CODE_SIGN_STYLE=Automatic \
+          CODE_SIGN_STYLE=Manual \
           DEVELOPMENT_TEAM=QX8XC3CNTR \
+          CODE_SIGN_IDENTITY="iPhone Distribution: Morris Merkel (QX8XC3CNTR)" \
+          PROVISIONING_PROFILE_SPECIFIER="Morris Merkel" \
           archive
         
         echo "✅ iOS build completed"
