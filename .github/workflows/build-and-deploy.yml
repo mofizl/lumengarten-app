@@ -202,25 +202,15 @@ jobs:
     
     - name: Build iOS for App Store
       run: |
-        # Skip Flutter build and go directly to xcodebuild for better certificate control
-        echo "Building with xcodebuild for Distribution certificate compatibility..."
+        # Use Flutter build instead of xcodebuild to avoid Account authentication issues
+        echo "🔄 Building with Flutter (avoids Xcode Account issues)..."
+        
+        # Flutter build handles code signing more reliably
+        flutter build ios --release --no-codesign
+        
+        # Now use xcodebuild just for archive with existing build
         cd ios
-        
-        # Get the exact provisioning profile name from previous step
-        PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
-        echo "🔍 Looking for provisioning profile at: $PP_PATH"
-        
-        if [ -f "$PP_PATH" ]; then
-          PROFILE_NAME=$(security cms -D -i $PP_PATH | grep -A 1 "Name" | tail -1 | sed 's/.*<string>//' | sed 's/<\/string>.*//' | xargs)
-          echo "🎯 Found provisioning profile name: '$PROFILE_NAME'"
-        else
-          echo "❌ Provisioning profile not found at $PP_PATH"
-          ls -la $RUNNER_TEMP/
-          exit 1
-        fi
-        
-        # Build with simple automatic signing - let Xcode handle everything
-        echo "🔄 Building with automatic signing and allowProvisioningUpdates..."
+        echo "📦 Creating archive from Flutter build..."
         xcodebuild -workspace Runner.xcworkspace \
           -scheme Runner \
           -configuration Release \
