@@ -58,17 +58,22 @@ jobs:
         curl -o $RUNNER_TEMP/AppleWWDRCA.cer https://www.apple.com/certificateauthority/AppleWWDRCA.cer
         security import $RUNNER_TEMP/AppleWWDRCA.cer -k $KEYCHAIN_PATH -T /usr/bin/codesign
         
-        # Try different approach: Import P12 to default keychain first
-        echo "🔄 Importing to login keychain first..."
-        security import $CERTIFICATE_PATH -P "$IOS_CERTIFICATE_PASSWORD" -k ~/Library/Keychains/login.keychain-db -T /usr/bin/codesign -T /usr/bin/security
+        # Extract private key and certificate separately
+        echo "🔧 Extracting private key..."
+        openssl pkcs12 -in $CERTIFICATE_PATH -nocerts -out $RUNNER_TEMP/private_key.pem -nodes -passin pass:"$IOS_CERTIFICATE_PASSWORD"
         
-        # Copy from login to our keychain
-        echo "🔄 Copying certificate to build keychain..."
-        security find-identity -v -s "iPhone Distribution" ~/Library/Keychains/login.keychain-db
+        echo "🔧 Extracting certificate..."
+        openssl pkcs12 -in $CERTIFICATE_PATH -clcerts -nokeys -out $RUNNER_TEMP/certificate.pem -passin pass:"$IOS_CERTIFICATE_PASSWORD"
         
-        # Alternative: Skip certificate import entirely and use existing system certificates
-        echo "🔍 Available identities:"
-        security find-identity -v -p codesigning
+        # Import them separately
+        echo "🔐 Importing private key..."
+        security import $RUNNER_TEMP/private_key.pem -k $KEYCHAIN_PATH -T /usr/bin/codesign -T /usr/bin/security
+        
+        echo "🔐 Importing certificate..."
+        security import $RUNNER_TEMP/certificate.pem -k $KEYCHAIN_PATH -T /usr/bin/codesign -T /usr/bin/security
+        
+        echo "🔍 Available identities after import:"
+        security find-identity -v -p codesigning $KEYCHAIN_PATH
         security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
         security list-keychain -d user -s $KEYCHAIN_PATH
 
