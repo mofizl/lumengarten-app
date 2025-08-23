@@ -177,10 +177,17 @@ jobs:
     
     - name: Build iOS for App Store
       run: |
-        # Build iOS app for App Store distribution
-        flutter build ios --release \
-          --build-name=1.0.0 \
-          --build-number=${{ github.run_number }}
+        # Skip Flutter build and go directly to xcodebuild for better certificate control
+        echo "Building with xcodebuild for Distribution certificate compatibility..."
+        cd ios
+        
+        # Build using xcodebuild directly
+        xcodebuild -workspace Runner.xcworkspace \
+          -scheme Runner \
+          -configuration Release \
+          -destination generic/platform=iOS \
+          -archivePath Runner.xcarchive \
+          archive
         
         echo "✅ iOS build completed"
     
@@ -188,20 +195,11 @@ jobs:
       run: |
         cd ios
         
-        # Archive the app
-        xcodebuild -workspace Runner.xcworkspace \
-          -scheme Runner \
-          -configuration Release \
-          -archivePath Runner.xcarchive \
-          -allowProvisioningUpdates \
-          archive
-        
-        # Export IPA for App Store
+        # Export IPA from existing archive
         xcodebuild -exportArchive \
           -archivePath Runner.xcarchive \
           -exportPath . \
-          -exportOptionsPlist Runner/ExportOptions.plist \
-          -allowProvisioningUpdates
+          -exportOptionsPlist Runner/ExportOptions.plist
           
         # Find the IPA file
         IPA_PATH=$(find . -name "*.ipa" | head -1)
