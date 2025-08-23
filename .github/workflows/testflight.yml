@@ -58,9 +58,13 @@ jobs:
         curl -o $RUNNER_TEMP/AppleWWDRCA.cer https://www.apple.com/certificateauthority/AppleWWDRCA.cer
         security import $RUNNER_TEMP/AppleWWDRCA.cer -k $KEYCHAIN_PATH -T /usr/bin/codesign
         
-        # Import our certificate to keychain - try without -T flag first
-        echo "🔐 Importing certificate..."
-        security import $CERTIFICATE_PATH -P "$IOS_CERTIFICATE_PASSWORD" -k $KEYCHAIN_PATH -A
+        # Convert P12 to PEM format for macOS compatibility  
+        echo "🔄 Converting P12 to PEM format..."
+        openssl pkcs12 -in $CERTIFICATE_PATH -out $RUNNER_TEMP/cert.pem -nodes -passin pass:"$IOS_CERTIFICATE_PASSWORD"
+        
+        # Import converted certificate
+        echo "🔐 Importing converted certificate..."
+        security import $RUNNER_TEMP/cert.pem -k $KEYCHAIN_PATH -T /usr/bin/codesign
         security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
         security list-keychain -d user -s $KEYCHAIN_PATH
 
