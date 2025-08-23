@@ -125,6 +125,16 @@ jobs:
         ls -la $CERTIFICATE_PATH
         openssl pkcs12 -info -in $CERTIFICATE_PATH -passin pass:"$IOS_CERTIFICATE_PASSWORD" -noout
         
+        # Debug password
+        echo "🔍 Password debug (safe):"
+        echo "Password length: ${#IOS_CERTIFICATE_PASSWORD}"
+        echo "Password starts with: ${IOS_CERTIFICATE_PASSWORD:0:4}..."
+        
+        # Try alternative import approach
+        echo "🔄 Trying P12 to PEM conversion..."
+        openssl pkcs12 -in $CERTIFICATE_PATH -clcerts -nokeys -out $RUNNER_TEMP/cert.pem -passin pass:"$IOS_CERTIFICATE_PASSWORD"
+        openssl pkcs12 -in $CERTIFICATE_PATH -nocerts -nodes -out $RUNNER_TEMP/key.pem -passin pass:"$IOS_CERTIFICATE_PASSWORD"
+        
         # Create dedicated build keychain 
         echo "🔐 Creating and configuring build keychain..."
         security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
@@ -132,9 +142,10 @@ jobs:
         security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
         security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
         
-        # Import certificate to build keychain
-        echo "📥 Importing certificate to build keychain..."
-        security import $CERTIFICATE_PATH -k $KEYCHAIN_PATH -P "$IOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+        # Import certificate to build keychain (try PEM approach)
+        echo "📥 Importing certificate and key separately..."
+        security import $RUNNER_TEMP/cert.pem -k $KEYCHAIN_PATH -T /usr/bin/codesign -A
+        security import $RUNNER_TEMP/key.pem -k $KEYCHAIN_PATH -T /usr/bin/codesign -A
         
         # Set partition list for macOS 10.12.5+ compatibility
         echo "🔧 Setting partition list for codesign access..."
