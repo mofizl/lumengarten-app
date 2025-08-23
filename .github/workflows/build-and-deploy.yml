@@ -189,12 +189,15 @@ jobs:
         echo "Building with xcodebuild for Distribution certificate compatibility..."
         cd ios
         
-        # Build using xcodebuild directly
+        # Build using xcodebuild with explicit provisioning profile
         xcodebuild -workspace Runner.xcworkspace \
           -scheme Runner \
           -configuration Release \
           -destination generic/platform=iOS \
           -archivePath Runner.xcarchive \
+          CODE_SIGN_STYLE=Manual \
+          DEVELOPMENT_TEAM=QX8XC3CNTR \
+          PROVISIONING_PROFILE_SPECIFIER="Lumengarten AppStore" \
           archive
         
         echo "✅ iOS build completed"
