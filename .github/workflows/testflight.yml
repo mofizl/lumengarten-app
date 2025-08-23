@@ -77,9 +77,8 @@ jobs:
         echo "🔑 Importing private key..."  
         security import $RUNNER_TEMP/key.pem -k ~/Library/Keychains/login.keychain-db -T /usr/bin/codesign -A
         
-        # Set key partition list for codesigning
-        echo "🔧 Setting key partition list..."
-        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" ~/Library/Keychains/login.keychain-db
+        # Skip partition list setup - certificates are already imported and accessible
+        echo "✅ Certificates imported successfully, skipping partition list setup"
         
         # Verify the import worked
         echo "🔍 Available signing identities:"
