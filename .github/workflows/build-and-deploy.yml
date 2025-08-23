@@ -190,15 +190,20 @@ jobs:
     - name: Configure Xcode Project for Distribution
       run: |
         cd ios
-        echo "Configuring Xcode project for iOS Distribution signing"
+        echo "Configuring Xcode project for flexible code signing"
         
-        # Update CODE_SIGN_IDENTITY for Release builds
-        sed -i '' 's/iPhone Developer/iOS Distribution/g' Runner.xcodeproj/project.pbxproj
+        # Remove any hardcoded CODE_SIGN_IDENTITY to allow flexible signing
+        sed -i '' 's/CODE_SIGN_IDENTITY\[sdk=iphoneos\*\] = "[^"]*";//g' Runner.xcodeproj/project.pbxproj
+        sed -i '' 's/"CODE_SIGN_IDENTITY\[sdk=iphoneos\*\]" = "[^"]*";//g' Runner.xcodeproj/project.pbxproj
         
-        # Set manual signing and team ID
-        sed -i '' 's/CODE_SIGN_STYLE = Automatic/CODE_SIGN_STYLE = Manual/g' Runner.xcodeproj/project.pbxproj
+        # Ensure automatic signing is set as default
+        sed -i '' 's/CODE_SIGN_STYLE = Manual/CODE_SIGN_STYLE = Automatic/g' Runner.xcodeproj/project.pbxproj
         
-        echo "✅ Xcode project configured for distribution"
+        # Set development team
+        sed -i '' 's/DEVELOPMENT_TEAM = "";/DEVELOPMENT_TEAM = QX8XC3CNTR;/g' Runner.xcodeproj/project.pbxproj
+        sed -i '' '/DEVELOPMENT_TEAM = QX8XC3CNTR;/!s/DEVELOPMENT_TEAM = /DEVELOPMENT_TEAM = QX8XC3CNTR; \/\/ /g' Runner.xcodeproj/project.pbxproj
+        
+        echo "✅ Xcode project configured for flexible signing"
     
     - name: Build iOS for App Store
       run: |
@@ -219,8 +224,8 @@ jobs:
           exit 1
         fi
         
-        # Try building with automatic provisioning first (may work better)
-        echo "🔄 Attempting build with automatic provisioning..."
+        # Build with automatic provisioning (should work now with clean project config)
+        echo "🔄 Building with automatic provisioning..."
         xcodebuild -workspace Runner.xcworkspace \
           -scheme Runner \
           -configuration Release \
@@ -228,19 +233,7 @@ jobs:
           -archivePath Runner.xcarchive \
           CODE_SIGN_STYLE=Automatic \
           DEVELOPMENT_TEAM=QX8XC3CNTR \
-          archive || {
-            echo "❌ Automatic provisioning failed, trying manual..."
-            # Fallback to manual with explicit profile
-            xcodebuild -workspace Runner.xcworkspace \
-              -scheme Runner \
-              -configuration Release \
-              -destination generic/platform=iOS \
-              -archivePath Runner.xcarchive \
-              CODE_SIGN_STYLE=Manual \
-              DEVELOPMENT_TEAM=QX8XC3CNTR \
-              PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
-              archive
-          }
+          archive
         
         echo "✅ iOS build completed"
     
