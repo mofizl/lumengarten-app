@@ -380,6 +380,7 @@ class _GardenPageState extends ConsumerState<GardenPage>
                 ),
               ),
             ),
+          ),
         );
       },
     );
