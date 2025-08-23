@@ -42,13 +42,15 @@ platform :ios do
     # Build Flutter app
     sh("flutter build ios --release --no-codesign")
 
-    # Debug: Find where Flutter built the app
-    sh("find .. -name Runner.app -type d")
-    sh("ls -la ../build/ios/")
+    # Debug: Find where Flutter built the app (from root directory)
+    sh("ls -la ../../build/")
+    sh("ls -la ../../build/ios/")
+    sh("find ../../build -name Runner.app -type d")
     
-    # Create unsigned IPA archive manually from the correct location
-    sh("cd ../build/ios/Release-iphoneos && zip -r Runner.ipa Runner.app")
-    sh("mkdir -p fastlane/builds && mv ../build/ios/Release-iphoneos/Runner.ipa fastlane/builds/Lumengarten.ipa")
+    # Create unsigned IPA from Flutter's build output
+    # Flutter said it built to build/ios/iphoneos/Runner.app 
+    sh("cd ../../build/ios/iphoneos && zip -r Runner.ipa Runner.app")
+    sh("mkdir -p fastlane/builds && mv ../../build/ios/iphoneos/Runner.ipa fastlane/builds/Lumengarten.ipa")
     
     ipa_path = "fastlane/builds/Lumengarten.ipa"
     UI.message("Created unsigned IPA at: #{ipa_path}")
