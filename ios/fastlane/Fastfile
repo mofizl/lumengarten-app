@@ -39,15 +39,26 @@ platform :ios do
       repo_update: true
     )
 
-    # Build signed IPA using flutter build ipa (includes embedded.mobileprovision)
-    sh("cd ../.. && flutter build ipa --release --export-options-plist=ios/exportOptions.plist")
+    # First build Flutter app without codesigning
+    sh("cd ../.. && flutter build ios --release --no-codesign")
     
-    # Flutter creates the IPA at build/ios/ipa/lumengarten_app.ipa
-    sh("mkdir -p fastlane/builds")
-    sh("cp ../../build/ios/ipa/lumengarten_app.ipa fastlane/builds/Lumengarten.ipa")
-    
-    # Get absolute path to the IPA
-    ipa_path = File.expand_path("fastlane/builds/Lumengarten.ipa")
+    # Build signed IPA using Fastlane with proper provisioning profile control
+    ipa_path = build_ios_app(
+      workspace: "Runner.xcworkspace",
+      scheme: "Runner",
+      configuration: "Release",
+      export_method: "app-store",
+      export_options: {
+        provisioningProfiles: {
+          "com.lumengarten.lumengartenApp" => "Morris Merkel"
+        },
+        signingStyle: "manual",
+        uploadBitcode: false,
+        uploadSymbols: true
+      },
+      output_directory: "fastlane/builds",
+      output_name: "Lumengarten.ipa"
+    )
     UI.message("Created signed IPA at: #{ipa_path}")
     
     # Debug environment variables
