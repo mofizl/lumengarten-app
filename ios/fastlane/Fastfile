@@ -57,7 +57,8 @@ platform :ios do
         uploadSymbols: true
       },
       output_directory: "fastlane/builds",
-      output_name: "Lumengarten.ipa"
+      output_name: "Lumengarten.ipa",
+      xcargs: "-allowProvisioningUpdates"
     )
     UI.message("Created signed IPA at: #{ipa_path}")
     
