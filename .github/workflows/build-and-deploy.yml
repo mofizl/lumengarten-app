@@ -103,7 +103,17 @@ jobs:
     
     - name: Get dependencies
       run: |
+        flutter clean
         flutter pub get
+    
+    - name: Clean CocoaPods Cache and Setup
+      run: |
+        cd ios
+        sudo gem install cocoapods
+        pod cache clean --all
+        rm -rf Pods
+        rm -f Podfile.lock
+        pod install --repo-update --verbose
     
     - name: Setup Ruby and Fastlane
       run: |
@@ -135,6 +145,11 @@ jobs:
         echo "BUNDLE_IDENTIFIER=com.lumengarten.lumengartenApp" >> $GITHUB_ENV
         echo "PROVISIONING_PROFILE_NAME=Morris Merkel" >> $GITHUB_ENV
     
+    - name: Set Flutter Environment Variables
+      run: |
+        echo "FLUTTER_ROOT=$FLUTTER_HOME" >> $GITHUB_ENV
+        echo "FLUTTER_BUILD_DIR=$(pwd)/build" >> $GITHUB_ENV
+    
     - name: Build and Deploy with Fastlane
       env:
         IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
@@ -145,6 +160,8 @@ jobs:
         DEVELOPMENT_TEAM: ${{ env.DEVELOPMENT_TEAM }}
         IOS_CERTIFICATE_PATH: ${{ env.IOS_CERTIFICATE_PATH }}
         IOS_PROVISIONING_PROFILE_PATH: ${{ env.IOS_PROVISIONING_PROFILE_PATH }}
+        FLUTTER_ROOT: ${{ env.FLUTTER_ROOT }}
+        FLUTTER_BUILD_DIR: ${{ env.FLUTTER_BUILD_DIR }}
       run: |
         cd ios
         bundle exec fastlane testflight
