@@ -20,6 +20,7 @@ platform :ios do
     )
 
     # Import certificate - REQUIRED for signing
+    UI.message("🔐 Certificate password check: #{ENV['IOS_CERTIFICATE_PASSWORD']}")
     import_certificate(
       certificate_path: ENV["IOS_CERTIFICATE_PATH"],
       certificate_password: ENV["IOS_CERTIFICATE_PASSWORD"],
