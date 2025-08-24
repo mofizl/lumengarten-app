@@ -88,9 +88,10 @@ jobs:
         name: android-aab
         path: build/app/outputs/bundle/release/app-release.aab
 
-  # iOS TestFlight Deployment with Fastlane
-  testflight:
+  # iOS Simple Build - Bypass Fastlane due to macOS runner issues
+  ios_build:
     runs-on: macos-14
+    timeout-minutes: 30
     
     steps:
     - uses: actions/checkout@v4
@@ -103,72 +104,47 @@ jobs:
     
     - name: Get dependencies
       run: |
-        flutter clean
         flutter pub get
     
-    - name: Clean CocoaPods Cache and Setup
-      run: |
-        cd ios
-        sudo gem install cocoapods
-        pod cache clean --all
-        rm -rf Pods
-        rm -f Podfile.lock
-        pod install --repo-update --verbose
-    
-    - name: Setup Ruby and Fastlane
-      run: |
-        cd ios
-        gem install bundler
-        bundle install
-    
-    - name: Prepare Fastlane Environment
+    - name: Setup certificates and provisioning
       env:
         IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
         IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
         IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
         KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
-        APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
-        APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
       run: |
-        cd ios
-        
-        # Create certificate and profile files from secrets
+        # Create certificate and provisioning profile
         echo -n "$IOS_CERTIFICATE_BASE64" | base64 -D > certificate.p12
         echo -n "$IOS_PROVISIONING_PROFILE_BASE64" | base64 -D > profile.mobileprovision
-        echo -n "$APP_STORE_CONNECT_API_KEY_BASE64" | base64 -D > AuthKey.p8
         
-        # Set environment variables for Fastlane
-        echo "IOS_CERTIFICATE_PATH=$(pwd)/certificate.p12" >> $GITHUB_ENV
-        echo "IOS_PROVISIONING_PROFILE_PATH=$(pwd)/profile.mobileprovision" >> $GITHUB_ENV
-        echo "APP_STORE_CONNECT_API_KEY_PATH=$(pwd)/AuthKey.p8" >> $GITHUB_ENV
-        echo "DEVELOPMENT_TEAM=QX8XC3CNTR" >> $GITHUB_ENV
-        echo "BUNDLE_IDENTIFIER=com.lumengarten.lumengartenApp" >> $GITHUB_ENV
-        echo "PROVISIONING_PROFILE_NAME=Morris Merkel" >> $GITHUB_ENV
+        # Create temporary keychain
+        security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+        security default-keychain -s build.keychain
+        security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+        security set-keychain-settings -t 3600 -u build.keychain
+        
+        # Import certificate
+        security import certificate.p12 -k build.keychain -P "$IOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+        security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" build.keychain
+        
+        # Install provisioning profile
+        mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+        cp profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
     
-    - name: Set Flutter Environment Variables
+    - name: Build iOS IPA
       run: |
-        echo "FLUTTER_ROOT=$FLUTTER_HOME" >> $GITHUB_ENV
-        echo "FLUTTER_BUILD_DIR=$(pwd)/build" >> $GITHUB_ENV
-    
-    - name: Build and Deploy with Fastlane
-      env:
-        IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
-        KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
-        APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-        APP_STORE_CONNECT_API_KEY_PATH: ${{ env.APP_STORE_CONNECT_API_KEY_PATH }}
-        APP_STORE_CONNECT_ISSUER_ID: "d439615c-03af-424b-8ed7-98abfae18d23"
-        DEVELOPMENT_TEAM: ${{ env.DEVELOPMENT_TEAM }}
-        IOS_CERTIFICATE_PATH: ${{ env.IOS_CERTIFICATE_PATH }}
-        IOS_PROVISIONING_PROFILE_PATH: ${{ env.IOS_PROVISIONING_PROFILE_PATH }}
-        FLUTTER_ROOT: ${{ env.FLUTTER_ROOT }}
-        FLUTTER_BUILD_DIR: ${{ env.FLUTTER_BUILD_DIR }}
-      run: |
-        cd ios
-        bundle exec fastlane testflight
+        flutter build ipa --release \
+          --export-options-plist=ios/exportOptions.plist \
+          --obfuscate --split-debug-info=debug-info/
     
     - name: Upload IPA Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: testflight-ipa
-        path: ios/fastlane/builds/Lumengarten.ipa
+        name: ios-ipa
+        path: build/ios/ipa/*.ipa
         if-no-files-found: warn
+        
+    - name: Output build info
+      run: |
+        echo "Build completed successfully!"
+        ls -la build/ios/ipa/
