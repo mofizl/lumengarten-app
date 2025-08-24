@@ -28,9 +28,33 @@ platform :ios do
       UI.message("Certificate file size: #{File.size(cert_path)} bytes")
     end
     
-    # Skip Fastlane import - use direct security command
-    UI.message("Using direct security command for certificate import...")
-    sh("security import \"#{ENV['IOS_CERTIFICATE_PATH']}\" -k fastlane_tmp_keychain -P \"#{ENV['IOS_CERTIFICATE_PASSWORD']}\" -T /usr/bin/codesign -T /usr/bin/security")
+    # Try multiple import methods
+    UI.message("Trying different import methods...")
+    
+    # Method 1: Without -T flags
+    begin
+      sh("security import \"#{ENV['IOS_CERTIFICATE_PATH']}\" -k fastlane_tmp_keychain -P \"#{ENV['IOS_CERTIFICATE_PASSWORD']}\"")
+      UI.success("Method 1 (no -T flags) worked!")
+    rescue => e
+      UI.error("Method 1 failed: #{e}")
+      
+      # Method 2: With different keychain path
+      begin
+        sh("security import \"#{ENV['IOS_CERTIFICATE_PATH']}\" -k ~/Library/Keychains/fastlane_tmp_keychain-db -P \"#{ENV['IOS_CERTIFICATE_PASSWORD']}\"")
+        UI.success("Method 2 (different keychain path) worked!")
+      rescue => e2
+        UI.error("Method 2 failed: #{e2}")
+        
+        # Method 3: Import to login keychain, then copy
+        begin
+          sh("security import \"#{ENV['IOS_CERTIFICATE_PATH']}\" -P \"#{ENV['IOS_CERTIFICATE_PASSWORD']}\"")
+          UI.success("Method 3 (login keychain) worked!")
+        rescue => e3
+          UI.error("All methods failed: #{e3}")
+          raise "Certificate import completely failed"
+        end
+      end
+    end
     
     # Debug: List available certificates in keychain
     UI.message("🔍 Available certificates in keychain:")
