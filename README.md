@@ -353,11 +353,76 @@ LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JR1RBZ0VBTUJNR0J5cUdTTTQ5QWdFR0NDcUdTTTQ5
 MIIvbAYJKoZIhvcNAQcCoIIvXTCCL1kCAQExCzAJBgUrDgMCGgUAMIIfeQYJKoZIhvcNAQcBoIIf...
 ```
 
-### ⚠️ **KRITISCH: Nach Session-Wiederherstellung**
-1. **GitHub Secrets aktualisieren** mit neuen Certificate Daten
-2. **TestFlight Build starten** mit Version 1.0.2+
-3. **Bundle ID**: `com.lumengarten.lumengartenApp` 
-4. **Provisioning Profile**: "Lumengarten AppStore"
+### 🔄 **AKTUELLER SESSION STAND (24. Aug 2024) - TestFlight Upload Problem**
+
+#### **🎯 PROBLEM: Fastlane upload_to_testflight API Key Fehler**
+
+**Status:** ✅ IPA wird erfolgreich erstellt (71.8MB) → ❌ TestFlight Upload schlägt fehl
+
+**Fehlermeldung:**
+```
+no implicit conversion of nil into String (TypeError)
+        key ||= File.binread(filepath)
+                             ^^^^^^^^
+    from .../spaceship/lib/spaceship/connect_api/token.rb:62:in `binread'
+```
+
+#### **🔍 DEBUGGING ERKENNTNISSE:**
+
+**✅ Erfolgreich:**
+- Flutter build ios --release --no-codesign funktioniert
+- IPA Creation mit 71.8MB erfolgreich  
+- Environment Variables werden korrekt weitergegeben:
+  ```
+  APP_STORE_CONNECT_API_KEY_ID: *** (SET)
+  APP_STORE_CONNECT_API_KEY_PATH: /Users/runner/work/***-app/***-app/ios/AuthKey.p8
+  ✅ API Key file found at: /Users/runner/work/***-app/***-app/ios/AuthKey.p8
+  ```
+
+**❌ PROBLEM-ROOT CAUSE:**
+- Fastlane `upload_to_testflight` API Key Parameter Bug
+- Hash-Syntax `api_key: { key_id: ..., key_filepath: ... }` propagiert `key_filepath` nicht korrekt
+- Spaceship gem erhält `nil` für `filepath` Parameter
+
+#### **🔧 AKTUELLE LÖSUNG (letzte Iteration):**
+
+**Hybrid-Ansatz mit separaten Parametern:**
+```ruby
+upload_to_testflight(
+  api_key_path: key_filepath,
+  api_key: {
+    key_id: key_id,
+    issuer_id: issuer_id
+  },
+  skip_waiting_for_build_processing: true,
+  ipa: ipa_path
+)
+```
+
+#### **⏳ NÄCHSTE SCHRITTE für neue Session:**
+
+**PRIORITÄT 1:** Monitor aktuelle Workflow-Ausführung mit Hybrid API Key Ansatz
+- Wenn erfolgreich: ✅ Pipeline ist final gelöst
+- Wenn fehlgeschlagen: Alternative TestFlight Upload Methoden
+
+**BACKUP-STRATEGIEN falls Hybrid-Ansatz fehlschlägt:**
+1. **Altool Approach**: `xcrun altool --upload-app` statt Fastlane
+2. **Direct App Store Connect API**: Manueller HTTP Upload
+3. **Manual Upload**: IPA als Artifact für manuelle TestFlight Upload
+
+#### **📋 VOLLSTÄNDIGE UMGEBUNG ready:**
+- ✅ iOS Distribution Certificate installiert (PEM-Methode)
+- ✅ Provisioning Profile "Morris Merkel" aktiviert  
+- ✅ App Store Connect API Key konfiguriert
+- ✅ Unsigned IPA Pipeline funktional
+- ✅ Environment Variable Propagation korrekt
+
+#### **⚠️ KRITISCH: Nach Session-Wiederherstellung**
+1. **Workflow Status prüfen**: GitHub Actions für aktuellen Build monitoren
+2. **Bei Erfolg**: TestFlight Upload validieren und Pipeline als final dokumentieren
+3. **Bei Fehlschlag**: Backup-Strategien implementieren (altool oder manual upload)
+4. **Bundle ID**: `com.lumengarten.lumengartenApp` 
+5. **Provisioning Profile**: "Morris Merkel"
 
 #### 🤖 Android Signing (Future)
 ```
@@ -961,6 +1026,91 @@ Diese Konfiguration produziert erfolgreich:
 ---
 
 ## 📝 Entwicklungsnotizen & Session Context
+
+### 🔄 **COMPREHENSIVE SESSION DOCUMENTATION (24. Aug 2024)**
+
+#### **📝 VOLLSTÄNDIGE CHRONOLOGIE der iOS TestFlight Pipeline Entwicklung**
+
+**Phase 1: Certificate Import Probleme (1-3 Stunden)**
+- **Problem**: `MAC verification failed during PKCS12 import (wrong password?)`
+- **Ursache**: P12 Certificate Format inkompatibel mit GitHub Actions macOS Keychain
+- **Mehrere Passwort-Varianten getestet**: "lumengarten", "TestFlight2024", "FinalCert2024"
+- **Lösung**: PEM-Konvertierung Ansatz mit separatem Certificate/Private Key Import
+
+**Phase 2: Fastlane Implementation (2-4 Stunden)**  
+- **Strategie-Wechsel**: Von manueller xcodebuild zu professioneller Fastlane-Lösung
+- **Vorteile**: Etablierte iOS Deployment Patterns, bessere API Integration
+- **Konfiguration**: `ios/fastlane/Fastfile` mit TestFlight lane
+- **CocoaPods Integration**: Bundle exec pod install in Fastlane Workflow
+
+**Phase 3: IPA Creation Success (1 Stunde)**
+- **Breakthrough**: Unsigned IPA Creation erfolgreich (71.8MB)
+- **Flutter Build**: `flutter build ios --release --no-codesign` funktioniert
+- **IPA Generation**: Manual ZIP-based IPA aus Runner.app
+- **Path Resolution**: File.expand_path() für absolute Pfade
+
+**Phase 4: TestFlight Upload API Problems (3+ Stunden)**
+- **Problem**: Fastlane `upload_to_testflight` API Key Parameter Bug  
+- **Root Cause**: `api_key: { key_filepath: ... }` propagiert filepath nicht zu spaceship gem
+- **Environment Debug**: Alle Variablen korrekt gesetzt, aber spaceship erhält nil
+- **Multiple Syntax Attempts**: Hash vs Individual parameters
+
+#### **🔧 TECHNISCHE ERKENNTNISSE & SOLUTIONS:**
+
+**Successful IPA Creation Pipeline:**
+```ruby
+# Flutter build ohne Code Signing
+sh("flutter build ios --release --no-codesign")
+
+# Manual IPA aus Runner.app
+sh("cd ../../build/ios/iphoneos && zip -r Runner.ipa Runner.app")
+sh("mkdir -p fastlane/builds && mv ../../build/ios/iphoneos/Runner.ipa fastlane/builds/Lumengarten.ipa")
+
+# File verification
+ipa_path = File.expand_path("fastlane/builds/Lumengarten.ipa")
+if File.exist?(ipa_path)
+  UI.message("✅ IPA file confirmed: #{ipa_path}")
+end
+```
+
+**Environment Variable Propagation Solution:**
+```yaml
+# GitHub Actions: Explicit env propagation zwischen Steps
+env:
+  APP_STORE_CONNECT_API_KEY_PATH: ${{ env.APP_STORE_CONNECT_API_KEY_PATH }}
+  APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+```
+
+**API Key Format Evolution:**
+```ruby
+# ❌ Versuch 1: Pure Hash (spaceship bug)
+api_key: { key_id: ..., issuer_id: ..., key_filepath: ... }
+
+# ❌ Versuch 2: Individual Parameters (invalid options)  
+api_key_id: key_id, api_key_issuer_id: issuer_id
+
+# 🔄 Versuch 3: Hybrid Approach (aktuell getestet)
+api_key_path: key_filepath,
+api_key: { key_id: key_id, issuer_id: issuer_id }
+```
+
+#### **📊 AKTUELLE PIPELINE STATUS:**
+
+**✅ Fully Working Components:**
+- Flutter iOS Build (--no-codesign): ✅ 71.8MB IPA
+- Fastlane Infrastructure: ✅ Bundle, CocoaPods, Environment  
+- GitHub Actions Integration: ✅ Secret propagation, Step chaining
+- IPA File Creation: ✅ Manual ZIP approach successful
+- Apple Certificate Setup: ✅ All certificates and profiles ready
+
+**🔄 Currently Testing:**
+- TestFlight Upload with Hybrid API Key format
+- Last commit: bd87925 - Hybrid API key parameter fix
+
+**⏸️ Potential Next Steps if Current Fails:**
+1. **xcrun altool alternative**: `xcrun altool --upload-app --file "*.ipa"`  
+2. **Direct App Store Connect API**: Raw HTTP POST upload
+3. **Manual Upload**: IPA als GitHub Artifact für manuellen TestFlight Upload
 
 ### 🔄 **AKTUELLE SESSION (Aug 2024) - TestFlight Pipeline**
 
