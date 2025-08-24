@@ -74,12 +74,27 @@ platform :ios do
         sh("find .. -name 'AuthKey*.p8' -type f")
       end
       
+      # Debug all API key components before upload
+      key_id = ENV["APP_STORE_CONNECT_API_KEY_ID"]
+      issuer_id = "d439615c-03af-424b-8ed7-98abfae18d23"
+      key_filepath = ENV["APP_STORE_CONNECT_API_KEY_PATH"]
+      
+      UI.message("🔍 API Key Components:")
+      UI.message("key_id: #{key_id.nil? ? 'NIL' : 'SET'}")
+      UI.message("issuer_id: #{issuer_id}")
+      UI.message("key_filepath: #{key_filepath}")
+      
+      if key_id.nil? || key_id.empty?
+        UI.error("❌ APP_STORE_CONNECT_API_KEY_ID is nil or empty!")
+        exit(1)
+      end
+      
       # Upload unsigned IPA to TestFlight - App Store Connect handles signing
       upload_to_testflight(
         api_key: {
-          key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
-          issuer_id: "d439615c-03af-424b-8ed7-98abfae18d23",
-          key_filepath: ENV["APP_STORE_CONNECT_API_KEY_PATH"]
+          key_id: key_id,
+          issuer_id: issuer_id,
+          key_filepath: key_filepath
         },
         skip_waiting_for_build_processing: true,
         ipa: ipa_path
