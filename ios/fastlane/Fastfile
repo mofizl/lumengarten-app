@@ -32,6 +32,15 @@ platform :ios do
       path: "Runner.xcodeproj",
       teamid: ENV["DEVELOPMENT_TEAM"]
     )
+    
+    # Disable automatic signing and set manual signing with provisioning profile
+    update_code_signing_settings(
+      path: "Runner.xcodeproj",
+      use_automatic_signing: false,
+      targets: ["Runner"],
+      code_sign_identity: "iPhone Distribution",
+      provisioning_profile: "Morris Merkel"
+    )
 
     # Install CocoaPods dependencies first
     cocoapods(
@@ -57,8 +66,7 @@ platform :ios do
         uploadSymbols: true
       },
       output_directory: "fastlane/builds",
-      output_name: "Lumengarten.ipa",
-      xcargs: "-allowProvisioningUpdates"
+      output_name: "Lumengarten.ipa"
     )
     UI.message("Created signed IPA at: #{ipa_path}")
     
