@@ -39,22 +39,16 @@ platform :ios do
       repo_update: true
     )
 
-    # Build Flutter app
-    sh("flutter build ios --release --no-codesign")
-
-    # Debug: Find where Flutter built the app (from root directory)
-    sh("ls -la ../../build/")
-    sh("ls -la ../../build/ios/")
-    sh("find ../../build -name Runner.app -type d")
+    # Build signed IPA using flutter build ipa (includes embedded.mobileprovision)
+    sh("cd ../.. && flutter build ipa --release")
     
-    # Create unsigned IPA from Flutter's build output
-    # Flutter said it built to build/ios/iphoneos/Runner.app 
-    sh("cd ../../build/ios/iphoneos && zip -r Runner.ipa Runner.app")
-    sh("mkdir -p fastlane/builds && mv ../../build/ios/iphoneos/Runner.ipa fastlane/builds/Lumengarten.ipa")
+    # Flutter creates the IPA at build/ios/ipa/lumengarten_app.ipa
+    sh("mkdir -p fastlane/builds")
+    sh("cp ../../build/ios/ipa/lumengarten_app.ipa fastlane/builds/Lumengarten.ipa")
     
     # Get absolute path to the IPA
     ipa_path = File.expand_path("fastlane/builds/Lumengarten.ipa")
-    UI.message("Created unsigned IPA at: #{ipa_path}")
+    UI.message("Created signed IPA at: #{ipa_path}")
     
     # Debug environment variables
     UI.message("🔍 Debug Environment Variables:")
@@ -103,7 +97,7 @@ platform :ios do
         exit(1)
       end
       
-      # Upload unsigned IPA to TestFlight - App Store Connect handles signing
+      # Upload signed IPA to TestFlight
       # Create API key object first, then use it for upload
       api_key = app_store_connect_api_key(
         key_id: key_id,
