@@ -104,9 +104,17 @@ platform :ios do
       end
       
       # Upload unsigned IPA to TestFlight - App Store Connect handles signing
-      # Use only api_key_path - Fastlane reads key_id and issuer_id from environment
+      # Create API key object first, then use it for upload
+      api_key = app_store_connect_api_key(
+        key_id: key_id,
+        issuer_id: issuer_id,
+        key_filepath: key_filepath,
+        duration: 1200,
+        in_house: false
+      )
+      
       upload_to_testflight(
-        api_key_path: key_filepath,
+        api_key: api_key,
         skip_waiting_for_build_processing: true,
         ipa: ipa_path
       )
