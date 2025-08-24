@@ -28,19 +28,9 @@ platform :ios do
       UI.message("Certificate file size: #{File.size(cert_path)} bytes")
     end
     
-    # Try alternative import method with direct security command
-    begin
-      import_certificate(
-        certificate_path: ENV["IOS_CERTIFICATE_PATH"],
-        certificate_password: ENV["IOS_CERTIFICATE_PASSWORD"],
-        keychain_name: "fastlane_tmp_keychain",
-        keychain_password: ENV["KEYCHAIN_PASSWORD"]
-      )
-    rescue => e
-      UI.error("Fastlane import failed: #{e}")
-      UI.message("Trying direct security command...")
-      sh("security import \"#{ENV['IOS_CERTIFICATE_PATH']}\" -k fastlane_tmp_keychain -P \"#{ENV['IOS_CERTIFICATE_PASSWORD']}\" -T /usr/bin/codesign")
-    end
+    # Skip Fastlane import - use direct security command
+    UI.message("Using direct security command for certificate import...")
+    sh("security import \"#{ENV['IOS_CERTIFICATE_PATH']}\" -k fastlane_tmp_keychain -P \"#{ENV['IOS_CERTIFICATE_PASSWORD']}\" -T /usr/bin/codesign -T /usr/bin/security")
     
     # Debug: List available certificates in keychain
     UI.message("🔍 Available certificates in keychain:")
