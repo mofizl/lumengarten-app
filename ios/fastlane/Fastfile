@@ -40,7 +40,7 @@ platform :ios do
     )
 
     # Build signed IPA using flutter build ipa (includes embedded.mobileprovision)
-    sh("cd ../.. && flutter build ipa --release")
+    sh("cd ../.. && flutter build ipa --release --export-options-plist=ios/exportOptions.plist")
     
     # Flutter creates the IPA at build/ios/ipa/lumengarten_app.ipa
     sh("mkdir -p fastlane/builds")
