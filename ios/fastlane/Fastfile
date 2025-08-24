@@ -26,6 +26,10 @@ platform :ios do
       keychain_name: "fastlane_tmp_keychain",
       keychain_password: ENV["KEYCHAIN_PASSWORD"]
     )
+    
+    # Debug: List available certificates in keychain
+    UI.message("🔍 Available certificates in keychain:")
+    sh("security find-identity -v -p codesigning fastlane_tmp_keychain")
 
     install_provisioning_profile(
       path: ENV["IOS_PROVISIONING_PROFILE_PATH"]
@@ -43,10 +47,10 @@ platform :ios do
     
     # Disable automatic signing and set manual signing with provisioning profile UUID
     update_code_signing_settings(
-      path: "Runner.xcodeproj",
+      path: "Runner.xcodeproj", 
       use_automatic_signing: false,
       targets: ["Runner"],
-      code_sign_identity: "iPhone Distribution",
+      code_sign_identity: "iPhone Distribution: Morris Merkel (QX8XC3CNTR)",
       profile_uuid: profile_uuid
     )
 
