@@ -1,0 +1,3 @@
+[submodule "lumengarten_app"]
+	path = lumengarten_app
+	url = https://github.com/mofizl/lumengarten-app.git
