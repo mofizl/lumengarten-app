@@ -186,6 +186,7 @@ class _GardenPageState extends ConsumerState<GardenPage>
                           onTap: () {
                             _voiceService.speak('Lese-Abenteuer. Magische Geschichten.');
                             Future.delayed(const Duration(milliseconds: 1500), () {
+                              // ignore: use_build_context_synchronously
                               if (mounted) context.go('/games/reading');
                             });
                           },
@@ -200,6 +201,7 @@ class _GardenPageState extends ConsumerState<GardenPage>
                           onTap: () {
                             _voiceService.speak('Schreib-Werkstatt. Zauberhafte Buchstaben.');
                             Future.delayed(const Duration(milliseconds: 1500), () {
+                              // ignore: use_build_context_synchronously
                               if (mounted) context.go('/games/writing');
                             });
                           },
@@ -214,6 +216,7 @@ class _GardenPageState extends ConsumerState<GardenPage>
                           onTap: () {
                             _voiceService.speak('Logik-Labor. Clevere Rätsel.');
                             Future.delayed(const Duration(milliseconds: 1500), () {
+                              // ignore: use_build_context_synchronously
                               if (mounted) context.go('/games/logic');
                             });
                           },
@@ -228,6 +231,7 @@ class _GardenPageState extends ConsumerState<GardenPage>
                           onTap: () {
                             _voiceService.speak('Zahlen-Zoo. Tierische Mathematik.');
                             Future.delayed(const Duration(milliseconds: 1500), () {
+                              // ignore: use_build_context_synchronously
                               if (mounted) context.go('/games/math');
                             });
                           },
