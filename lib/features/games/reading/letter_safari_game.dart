@@ -150,10 +150,10 @@ class _LetterSafariGameState extends State<LetterSafariGame>
     _voiceService.speak('Fantastisch! Du hast alle ${_currentLetter}s gefunden! Du bekommst $stars Sterne!');
     
     // Speichere Fortschritt - Update Reading Area
-    final currentProgress = 0.2; // Basis-Fortschritt für Reading
-    final gameProgress = stars / 3.0 * 0.1; // Bis zu 10% für dieses Spiel
-    // _progressService.updateAreaProgress(LearningArea.reading, currentProgress + gameProgress);
     // TODO: Progress tracking implementieren
+    // final currentProgress = 0.2; // Basis-Fortschritt für Reading  
+    // final gameProgress = stars / 3.0 * 0.1; // Bis zu 10% für dieses Spiel
+    // _progressService.updateAreaProgress(LearningArea.reading, currentProgress + gameProgress);
     
     // Zeige Erfolgsscreen nach kurzer Verzögerung
     Future.delayed(const Duration(seconds: 2), () {
