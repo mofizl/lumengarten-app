@@ -122,7 +122,7 @@ jobs:
         pod repo update
         pod install --verbose
     
-    - name: Setup Fastlane via Homebrew
+    - name: Setup Fastlane via Homebrew and fix PATH
       run: |
         # Remove any conflicting gem installations first
         sudo gem uninstall cocoapods -aIx || true
@@ -135,6 +135,12 @@ jobs:
         brew install --force --overwrite cocoapods
         brew link --overwrite cocoapods
         brew link --overwrite fastlane
+        # Ensure Homebrew binaries are in PATH for Flutter
+        echo "/opt/homebrew/bin:/usr/local/bin" >> $GITHUB_PATH
+        # Verify installations
+        which pod
+        which fastlane
+        pod --version
     
     - name: Prepare Fastlane Environment
       env:
