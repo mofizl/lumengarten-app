@@ -83,10 +83,10 @@ platform :ios do
       profile_uuid: profile_uuid
     )
 
-    # Skip CocoaPods and use Flutter's direct iOS build
-    UI.message("🔨 Starting Flutter iOS build with --skip-pod-install...")
-    # Build Flutter directly without CocoaPods to avoid dependency issues
-    sh("cd ../.. && flutter build ios --release --no-codesign --skip-pod-install")
+    # CocoaPods should be installed in GitHub Actions workflow
+    UI.message("🔨 Starting Flutter iOS build...")
+    # Build Flutter app - CocoaPods should already be set up
+    sh("cd ../.. && flutter build ios --release --no-codesign")
     
     # Build signed IPA using Fastlane
     UI.message("🔨 Starting Xcode archive build...")

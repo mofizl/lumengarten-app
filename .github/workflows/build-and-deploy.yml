@@ -114,7 +114,8 @@ jobs:
     - name: Clean CocoaPods Cache and Setup (iOS 16.0 Compatible)
       run: |
         cd ios
-        sudo gem install cocoapods
+        # Use the Homebrew-installed CocoaPods instead of gem
+        export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
         pod cache clean --all
         rm -rf Pods
         rm -f Podfile.lock
