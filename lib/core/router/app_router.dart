@@ -4,6 +4,7 @@ import '../../features/landing/landing_page.dart';
 import '../../features/garden/garden_page.dart';
 import '../../features/games/games_page.dart';
 import '../../features/games/game_area_page.dart';
+import '../../features/games/reading/safari_adventure_game.dart';
 import '../../features/progress/progress_page.dart';
 import '../constants/app_constants.dart';
 
@@ -35,7 +36,7 @@ class AppRouter {
           GoRoute(
             path: '/reading',
             name: 'reading-games',
-            builder: (context, state) => const GameAreaPage(area: 'reading'),
+            builder: (context, state) => const SafariAdventureGame(),
           ),
           GoRoute(
             path: '/writing',

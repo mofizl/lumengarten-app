@@ -107,14 +107,16 @@ jobs:
         flutter clean
         flutter pub get
     
-    - name: Clean CocoaPods Cache and Setup
+    - name: Clean CocoaPods Cache and Setup (iOS 16.0 Compatible)
       run: |
         cd ios
         sudo gem install cocoapods
         pod cache clean --all
         rm -rf Pods
         rm -f Podfile.lock
-        pod install --repo-update --verbose
+        # iOS 16.0 deployment target requires latest CocoaPods specs
+        pod repo update
+        pod install --verbose --deployment
     
     - name: Setup Ruby and Fastlane
       run: |

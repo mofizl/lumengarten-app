@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../../../core/services/voice_service.dart';
+import '../../../core/theme/app_theme.dart';
 
 class LetterSafariGame extends StatefulWidget {
   const LetterSafariGame({super.key});
@@ -25,12 +26,23 @@ class _LetterSafariGameState extends State<LetterSafariGame>
   bool _gameCompleted = false;
   List<ParticleEffect> _particles = [];
   
-  // Magische Garten-Szenen
-  final List<String> _backgroundScenes = [
-    '🌸🦋🌺🌿🌳🌻🐛🌹🍄🌱',
-    '🌲🦌🌰🍂🦔🌾🦉🌿🍃🌸',
-    '🌊🐠🌺🦋🌸🌿💎✨🌈🦄',
-    '🌙⭐🦋🌸🌿🔮💫🌟✨🦄'
+  // Safari Tiere für jeden Buchstaben
+  final Map<String, SafariAnimal> _safariAnimals = {
+    'A': SafariAnimal('Affe', '🐒', Colors.brown.shade400),
+    'B': SafariAnimal('Bär', '🐻', Colors.brown.shade600),
+    'C': SafariAnimal('Chamäleon', '🦎', Colors.green.shade500),
+    'D': SafariAnimal('Delfin', '🐬', Colors.blue.shade400),
+    'E': SafariAnimal('Elefant', '🐘', Colors.grey.shade500),
+    'F': SafariAnimal('Flamingo', '🦩', Colors.pink.shade400),
+    'G': SafariAnimal('Giraffe', '🦒', Colors.orange.shade400),
+    'H': SafariAnimal('Hase', '🐰', Colors.grey.shade300),
+    'I': SafariAnimal('Igel', '🦔', Colors.brown.shade500),
+    'J': SafariAnimal('Jaguar', '🐆', Colors.orange.shade600),
+  };
+
+  // Jungle-Hintergrund Elemente
+  final List<String> _jungleElements = [
+    '🌴', '🌿', '🍃', '🌾', '🌳', '🦋', '🐛', '🌺', '🌸', '🌻'
   ];
   
   @override
@@ -80,12 +92,13 @@ class _LetterSafariGameState extends State<LetterSafariGame>
   }
   
   String _getRandomLetter() {
-    final letters = ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
+    final letters = _safariAnimals.keys.where((letter) => letter != _currentLetter).toList();
     return letters[math.Random().nextInt(letters.length)];
   }
   
   void _startGame() {
-    _voiceService.speak('Willkommen zur Buchstaben-Safari! Finde alle ${_currentLetter}s in dem magischen Garten! Tippe sie an!');
+    final animal = _safariAnimals[_currentLetter];
+    _voiceService.speak('Willkommen zur Safari! Finde alle ${animal?.name}s für den Buchstaben $_currentLetter! Tippe sie an!');
   }
   
   void _onLetterTapped(int index) {
@@ -103,7 +116,8 @@ class _LetterSafariGameState extends State<LetterSafariGame>
         _addParticleEffect(letterPos.x, letterPos.y);
       });
       
-      _voiceService.speak('Super! Du hast ein ${_currentLetter} gefunden!');
+      final animal = _safariAnimals[_currentLetter];
+      _voiceService.speak('Super! Du hast einen ${animal?.name} gefunden!');
       
       // Überprüfe ob Spiel beendet
       if (_foundLetters.length >= 3) {
@@ -111,7 +125,9 @@ class _LetterSafariGameState extends State<LetterSafariGame>
       }
     } else {
       // Falscher Buchstabe
-      _voiceService.speak('Das ist ein ${letterPos.letter}. Suche nach ${_currentLetter}!');
+      final wrongAnimal = _safariAnimals[letterPos.letter];
+      final targetAnimal = _safariAnimals[_currentLetter];
+      _voiceService.speak('Das ist ein ${wrongAnimal?.name}! Suche nach ${targetAnimal?.name} für $_currentLetter!');
       setState(() {
         _score = math.max(0, _score - 20);
       });
@@ -246,7 +262,7 @@ class _LetterSafariGameState extends State<LetterSafariGame>
   }
   
   String _getNextLetter() {
-    final letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+    final letters = _safariAnimals.keys.toList();
     final currentIndex = letters.indexOf(_currentLetter);
     return letters[(currentIndex + 1) % letters.length];
   }
@@ -256,24 +272,24 @@ class _LetterSafariGameState extends State<LetterSafariGame>
     return Scaffold(
       body: Stack(
         children: [
-          // Magischer animierter Hintergrund
+          // Safari Dschungel Hintergrund
           AnimatedBuilder(
             animation: _backgroundAnimation,
             builder: (context, child) {
               return Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
                     colors: [
-                      Color.lerp(Colors.purple.shade200, Colors.pink.shade200, 
-                          math.sin(_backgroundAnimation.value * math.pi * 2) * 0.5 + 0.5)!,
-                      Color.lerp(Colors.blue.shade200, Colors.green.shade200,
-                          math.cos(_backgroundAnimation.value * math.pi * 2) * 0.5 + 0.5)!,
+                      Colors.lightBlue.shade300, // Himmel
+                      Colors.green.shade300,     // Baumkronen
+                      Colors.green.shade600,     // Dschungel
                     ],
+                    stops: const [0.0, 0.4, 1.0],
                   ),
                 ),
-                child: _buildBackgroundElements(),
+                child: _buildJungleBackground(),
               );
             },
           ),
@@ -351,13 +367,22 @@ class _LetterSafariGameState extends State<LetterSafariGame>
               color: Colors.white.withOpacity(0.9),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Text(
-              'Finde: $_currentLetter',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.purple,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '🔍 Finde: $_currentLetter - ',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.brown,
+                  ),
+                ),
+                Text(
+                  _safariAnimals[_currentLetter]?.emoji ?? '',
+                  style: const TextStyle(fontSize: 24),
+                ),
+              ],
             ),
           ),
           Container(
@@ -388,45 +413,83 @@ class _LetterSafariGameState extends State<LetterSafariGame>
   
   Widget _buildLetterWidget(LetterPosition pos, int index) {
     bool isFound = _foundLetters.contains(index);
+    final animal = _safariAnimals[pos.letter];
     
     return GestureDetector(
       onTap: () => _onLetterTapped(index),
       child: Transform.rotate(
         angle: pos.rotation,
-        child: Transform.scale(
-          scale: pos.scale,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            width: 60,
-            height: 60,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          transform: Matrix4.identity()
+            ..scale(pos.scale + (isFound ? 0.1 : 0.0))
+            ..rotateZ(isFound ? 0.1 : 0.0),
+          child: Container(
+            width: 80,
+            height: 100,
             decoration: BoxDecoration(
               color: isFound 
-                ? Colors.green.withOpacity(0.8)
-                : pos.isTarget 
-                  ? Colors.yellow.withOpacity(0.8)
-                  : Colors.white.withOpacity(0.8),
-              borderRadius: BorderRadius.circular(15),
+                ? Colors.green.shade200
+                : animal?.color.withOpacity(0.3) ?? Colors.white.withOpacity(0.8),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: pos.isTarget ? Colors.orange : Colors.grey,
-                width: 2,
+                color: isFound 
+                  ? Colors.green.shade600
+                  : pos.isTarget 
+                    ? Colors.orange.shade600
+                    : Colors.brown.shade400,
+                width: 3,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 8,
-                  offset: const Offset(2, 2),
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 10,
+                  offset: const Offset(2, 4),
                 ),
               ],
             ),
-            child: Center(
-              child: Text(
-                pos.letter,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: isFound ? Colors.white : Colors.black87,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Tier-Emoji
+                Text(
+                  animal?.emoji ?? '❓',
+                  style: TextStyle(
+                    fontSize: isFound ? 32 : 28,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 4),
+                // Buchstabe
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    pos.letter,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isFound ? Colors.green.shade800 : Colors.black87,
+                    ),
+                  ),
+                ),
+                // Tier-Name
+                if (isFound)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      animal?.name ?? '',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.green.shade800,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
@@ -434,28 +497,79 @@ class _LetterSafariGameState extends State<LetterSafariGame>
     );
   }
   
-  Widget _buildBackgroundElements() {
+  Widget _buildJungleBackground() {
     return AnimatedBuilder(
       animation: _backgroundAnimation,
       builder: (context, child) {
         return Stack(
           children: [
-            // Schwebende Hintergrund-Emojis
-            ...List.generate(20, (index) {
-              final emoji = _backgroundScenes[0][index % _backgroundScenes[0].length];
+            // Sonne
+            Positioned(
+              top: 30,
+              right: 50,
+              child: Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: Colors.yellow.shade300,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.yellow.shade200,
+                      blurRadius: 20,
+                      spreadRadius: 10,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            // Schwebende Dschungel-Elemente
+            ...List.generate(25, (index) {
+              final element = _jungleElements[index % _jungleElements.length];
               final offset = _backgroundAnimation.value * 2 * math.pi + index;
+              final baseX = 30 + (index % 6) * 70;
+              final baseY = 80 + (index ~/ 6) * 100;
               
               return Positioned(
-                left: 50 + (index % 5) * 80 + math.sin(offset) * 30,
-                top: 100 + (index ~/ 5) * 120 + math.cos(offset * 0.7) * 20,
-                child: Opacity(
-                  opacity: 0.3 + math.sin(offset) * 0.2,
-                  child: Transform.scale(
-                    scale: 0.8 + math.cos(offset * 1.3) * 0.3,
-                    child: Text(
-                      emoji,
-                      style: const TextStyle(fontSize: 32),
+                left: baseX + math.sin(offset) * 15,
+                top: baseY + math.cos(offset * 0.8) * 10,
+                child: Transform.scale(
+                  scale: 0.6 + math.sin(offset * 1.2) * 0.2,
+                  child: Transform.rotate(
+                    angle: math.sin(offset * 0.5) * 0.1,
+                    child: Opacity(
+                      opacity: 0.4 + math.cos(offset) * 0.2,
+                      child: Text(
+                        element,
+                        style: const TextStyle(
+                          fontSize: 28,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black26,
+                              blurRadius: 3,
+                              offset: Offset(1, 1),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
+                  ),
+                ),
+              );
+            }),
+            
+            // Vögel am Himmel
+            ...List.generate(3, (index) {
+              final birdOffset = _backgroundAnimation.value + index * 2;
+              return Positioned(
+                left: (birdOffset * 200) % (MediaQuery.of(context).size.width + 100) - 50,
+                top: 50 + index * 15,
+                child: Text(
+                  '🕊️',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white.withOpacity(0.8),
                   ),
                 ),
               );
@@ -475,6 +589,14 @@ class _LetterSafariGameState extends State<LetterSafariGame>
 }
 
 // Datenklassen
+class SafariAnimal {
+  final String name;
+  final String emoji;
+  final Color color;
+  
+  SafariAnimal(this.name, this.emoji, this.color);
+}
+
 class LetterPosition {
   final String letter;
   final double x, y;

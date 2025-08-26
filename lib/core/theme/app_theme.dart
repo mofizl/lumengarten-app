@@ -82,7 +82,7 @@ class AppTheme {
       ),
       
       // Abgerundete Cards
-      cardTheme: CardThemeData(
+      cardTheme: CardTheme(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),

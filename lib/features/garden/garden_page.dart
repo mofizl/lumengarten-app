@@ -103,143 +103,138 @@ class _GardenPageState extends ConsumerState<GardenPage>
               child: SafeArea(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.black.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(25),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: Colors.black.withOpacity(0.3),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
                     ],
                   ),
                   child: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: AppTheme.darkGray),
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
                     onPressed: () => context.go(AppConstants.landingRoute),
                   ),
                 ),
               ),
             ),
             
-            // Titel - oben mittig
+            // Titel - oben mittig mit custom Grafik
             Positioned(
               top: 50,
-              left: 80,
+              left: 20,
               right: 20,
               child: SafeArea(
                 child: FadeTransition(
                   opacity: _headerFadeAnimation,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(25),
-                      border: Border.all(
-                        color: AppTheme.magicGreen.withOpacity(0.5),
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 15,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.8, end: 1.0).animate(
+                      CurvedAnimation(parent: _headerController, curve: Curves.elasticOut),
                     ),
-                    child: Text(
-                      'Dunkis magischer Lumengarten',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.darkGray,
+                    child: Container(
+                      height: 80,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Image.asset(
+                        'assets/images/überschrift lumengarten.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Text(
+                            'Dunkis magischer Lumengarten',
+                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              fontSize: 24,
+                              shadows: [
+                                Shadow(
+                                  color: AppTheme.magicGreen.withOpacity(0.8),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 0),
+                                ),
+                                Shadow(
+                                  color: Colors.black.withOpacity(0.8),
+                                  blurRadius: 4,
+                                  offset: const Offset(2, 2),
+                                ),
+                              ],
+                            ),
+                            textAlign: TextAlign.center,
+                          );
+                        },
                       ),
-                      textAlign: TextAlign.center,
                     ),
                   ),
                 ),
               ),
             ),
             
-            // Lernbereich-Karten - größerer Bereich
+            // Lernbereiche frei über den Screen verteilt
+            // Lese-Abenteuer - links oben
             Positioned(
-              bottom: 10,
-              left: 12,
-              right: 12,
-              child: SafeArea(
-                child: FadeTransition(
-                  opacity: _cardsStaggerAnimation,
-                  child: SizedBox(
-                    height: 450,
-                    child: GridView.count(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 6,
-                      crossAxisSpacing: 6,
-                      childAspectRatio: 0.9,
-                      physics: const ClampingScrollPhysics(),
-                      children: [
-                        _buildFloatingLearningCard(
-                          title: 'Lese-Abenteuer',
-                          iconPath: 'assets/images/icons/reading_magic.png',
-                          description: 'Magische Geschichten',
-                          progress: 0.2,
-                          color: AppTheme.primaryBlue,
-                          delay: 0.0,
-                          onTap: () {
-                            _voiceService.speak('Lese-Abenteuer. Magische Geschichten.');
-                            Future.delayed(const Duration(milliseconds: 1500), () {
-                              // ignore: use_build_context_synchronously
-                              if (mounted) context.go('/games/reading');
-                            });
-                          },
-                        ),
-                        _buildFloatingLearningCard(
-                          title: 'Schreib-Werkstatt', 
-                          iconPath: 'assets/images/icons/writing_magic.png',
-                          description: 'Zauberhafte Buchstaben',
-                          progress: 0.1,
-                          color: AppTheme.magicGreen,
-                          delay: 0.2,
-                          onTap: () {
-                            _voiceService.speak('Schreib-Werkstatt. Zauberhafte Buchstaben.');
-                            Future.delayed(const Duration(milliseconds: 1500), () {
-                              // ignore: use_build_context_synchronously
-                              if (mounted) context.go('/games/writing');
-                            });
-                          },
-                        ),
-                        _buildFloatingLearningCard(
-                          title: 'Logik-Labor',
-                          iconPath: 'assets/images/icons/logic_magic.png',
-                          description: 'Clevere Rätsel',
-                          progress: 0.0,
-                          color: AppTheme.lightPurple,
-                          delay: 0.4,
-                          onTap: () {
-                            _voiceService.speak('Logik-Labor. Clevere Rätsel.');
-                            Future.delayed(const Duration(milliseconds: 1500), () {
-                              // ignore: use_build_context_synchronously
-                              if (mounted) context.go('/games/logic');
-                            });
-                          },
-                        ),
-                        _buildFloatingLearningCard(
-                          title: 'Zahlen-Zoo',
-                          iconPath: 'assets/images/icons/math_magic.png',
-                          description: 'Tierische Mathematik',
-                          progress: 0.0,
-                          color: AppTheme.starYellow,
-                          delay: 0.6,
-                          onTap: () {
-                            _voiceService.speak('Zahlen-Zoo. Tierische Mathematik.');
-                            Future.delayed(const Duration(milliseconds: 1500), () {
-                              // ignore: use_build_context_synchronously
-                              if (mounted) context.go('/games/math');
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+              top: 200,
+              left: 40,
+              child: _buildFloatingIcon(
+                iconPath: 'assets/images/icons/reading_magic.png',
+                color: AppTheme.primaryBlue,
+                delay: 0.0,
+                onTap: () {
+                  _voiceService.speak('Lese-Abenteuer. Magische Geschichten.');
+                  Future.delayed(const Duration(milliseconds: 1500), () {
+                    if (mounted) context.go('/games/reading');
+                  });
+                },
+              ),
+            ),
+            
+            // Schreib-Werkstatt - rechts oben
+            Positioned(
+              top: 180,
+              right: 50,
+              child: _buildFloatingIcon(
+                iconPath: 'assets/images/icons/writing_magic.png',
+                color: AppTheme.magicGreen,
+                delay: 0.2,
+                onTap: () {
+                  _voiceService.speak('Schreib-Werkstatt. Zauberhafte Buchstaben.');
+                  Future.delayed(const Duration(milliseconds: 1500), () {
+                    if (mounted) context.go('/games/writing');
+                  });
+                },
+              ),
+            ),
+            
+            // Logik-Labor - links unten
+            Positioned(
+              bottom: 200,
+              left: 60,
+              child: _buildFloatingIcon(
+                iconPath: 'assets/images/icons/logic_magic.png',
+                color: AppTheme.lightPurple,
+                delay: 0.4,
+                onTap: () {
+                  _voiceService.speak('Logik-Labor. Clevere Rätsel.');
+                  Future.delayed(const Duration(milliseconds: 1500), () {
+                    if (mounted) context.go('/games/logic');
+                  });
+                },
+              ),
+            ),
+            
+            // Zahlen-Zoo - rechts unten
+            Positioned(
+              bottom: 180,
+              right: 40,
+              child: _buildFloatingIcon(
+                iconPath: 'assets/images/icons/math_magic.png',
+                color: AppTheme.starYellow,
+                delay: 0.6,
+                onTap: () {
+                  _voiceService.speak('Zahlen-Zoo. Tierische Mathematik.');
+                  Future.delayed(const Duration(milliseconds: 1500), () {
+                    if (mounted) context.go('/games/math');
+                  });
+                },
               ),
             ),
           ],
@@ -248,11 +243,8 @@ class _GardenPageState extends ConsumerState<GardenPage>
     );
   }
 
-  Widget _buildFloatingLearningCard({
-    required String title,
+  Widget _buildFloatingIcon({
     required String iconPath,
-    required String description,
-    required double progress,
     required Color color,
     required double delay,
     required VoidCallback onTap,
@@ -260,121 +252,50 @@ class _GardenPageState extends ConsumerState<GardenPage>
     return AnimatedBuilder(
       animation: _floatingAnimation,
       builder: (context, child) {
-        final floatingOffset = 3 * _floatingAnimation.value * (1 + delay);
+        final floatingOffset = 8 * _floatingAnimation.value * (1 + delay * 0.5);
         return Transform.translate(
           offset: Offset(0, floatingOffset),
           child: ScaleTransition(
-            scale: Tween<double>(begin: 0.8, end: 1.0).animate(
+            scale: Tween<double>(begin: 0.0, end: 1.0).animate(
               CurvedAnimation(
                 parent: _cardsController,
-                curve: Interval(delay, delay + 0.4, curve: Curves.elasticOut),
+                curve: Interval(delay * 0.5, (delay * 0.5) + 0.5, curve: Curves.elasticOut),
               ),
             ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: onTap,
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        color.withOpacity(0.8),
-                        color.withOpacity(0.9),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
+            child: GestureDetector(
+              onTap: onTap,
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(40),
+                  border: Border.all(
+                    color: color.withOpacity(0.6),
+                    width: 3,
                   ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Image.asset(
-                            iconPath,
-                            width: 60,
-                            height: 60,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Icon(
-                                Icons.school,
-                                size: 50,
-                                color: color,
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black26,
-                              offset: Offset(1, 1),
-                              blurRadius: 2,
-                            ),
-                          ],
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        description,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 12),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          backgroundColor: Colors.white.withOpacity(0.3),
-                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                          minHeight: 6,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${(progress * 100).toInt()}%',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withOpacity(0.4),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(40),
+                  child: Image.asset(
+                    iconPath,
+                    width: 50,
+                    height: 50,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Icon(
+                        Icons.school,
+                        size: 40,
+                        color: color,
+                      );
+                    },
                   ),
                 ),
               ),
