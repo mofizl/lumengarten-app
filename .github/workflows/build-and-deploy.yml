@@ -122,14 +122,12 @@ jobs:
         pod repo update
         pod install --verbose
     
-    - name: Setup Ruby without native extensions cache
+    - name: Setup Fastlane via Homebrew
       run: |
-        # Use system Ruby to avoid native extension compilation issues
-        cd ios
-        sudo gem install bundler -v 2.4.22 --no-document
-        # Install gems without native extensions where possible
-        bundle config set --local force_ruby_platform true
-        bundle install --retry=3
+        # Install Fastlane directly via Homebrew to avoid Ruby gem compilation
+        brew install fastlane
+        # Also install CocoaPods via Homebrew
+        brew install cocoapods
     
     - name: Prepare Fastlane Environment
       env:
@@ -176,7 +174,7 @@ jobs:
       run: |
         cd ios
         echo "Starting Fastlane with extended timeout due to macOS runner performance issues..."
-        bundle exec fastlane testflight
+        fastlane testflight
     
     - name: Upload IPA Artifact
       uses: actions/upload-artifact@v4
