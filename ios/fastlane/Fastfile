@@ -83,12 +83,8 @@ platform :ios do
       profile_uuid: profile_uuid
     )
 
-    # Install CocoaPods dependencies with iOS 16.0 compatibility
-    UI.message("📦 Installing CocoaPods for iOS 16.0 deployment target...")
-    cocoapods(
-      clean_install: true,
-      repo_update: true
-    )
+    # CocoaPods already installed in GitHub Actions workflow
+    UI.message("📦 CocoaPods already installed via Homebrew - skipping gem installation")
 
     # Build Flutter app with specific iOS SDK version
     UI.message("🔨 Starting Flutter iOS build...")
