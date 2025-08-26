@@ -116,7 +116,7 @@ jobs:
         rm -f Podfile.lock
         # iOS 16.0 deployment target requires latest CocoaPods specs
         pod repo update
-        pod install --verbose --deployment
+        pod install --verbose
     
     - name: Setup Ruby and Fastlane
       run: |

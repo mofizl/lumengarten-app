@@ -87,8 +87,7 @@ platform :ios do
     UI.message("📦 Installing CocoaPods for iOS 16.0 deployment target...")
     cocoapods(
       clean_install: true,
-      repo_update: true,
-      deployment: true
+      repo_update: true
     )
 
     # First build Flutter app without codesigning

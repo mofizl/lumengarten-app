@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../../../core/services/voice_service.dart';
-import '../../../core/theme/app_theme.dart';
+// import '../../../core/theme/app_theme.dart'; // Unused import
 
 class LetterSafariGame extends StatefulWidget {
   const LetterSafariGame({super.key});
