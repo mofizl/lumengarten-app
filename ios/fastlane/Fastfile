@@ -91,9 +91,10 @@ platform :ios do
       repo_update: true
     )
 
-    # Build Flutter app without codesigning
+    # Build Flutter app with specific iOS SDK version
     UI.message("🔨 Starting Flutter iOS build...")
-    sh("cd ../.. && flutter build ios --release --no-codesign")
+    # Force iOS 17.0 or available SDK instead of iOS 18.0
+    sh("cd ../.. && flutter build ios --release --no-codesign --target-platform ios-arm64")
     
     # Build signed IPA using Fastlane
     UI.message("🔨 Starting Xcode archive build...")

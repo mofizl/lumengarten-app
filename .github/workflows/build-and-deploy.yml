@@ -102,10 +102,14 @@ jobs:
         flutter-version: ${{ env.FLUTTER_VERSION }}
         cache: true
     
-    - name: Get dependencies
+    - name: Get dependencies and configure iOS SDK
       run: |
         flutter clean
         flutter pub get
+        # List available iOS SDKs
+        xcodebuild -showsdks | grep iOS
+        # Set FLUTTER_XCODE_BUILD_SETTINGS to use available iOS SDK
+        echo "IPHONEOS_DEPLOYMENT_TARGET=16.0" >> $GITHUB_ENV
     
     - name: Clean CocoaPods Cache and Setup (iOS 16.0 Compatible)
       run: |
