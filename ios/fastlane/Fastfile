@@ -90,10 +90,19 @@ platform :ios do
       repo_update: true
     )
 
-    # First build Flutter app without codesigning
-    sh("cd ../.. && flutter build ios --release --no-codesign")
+    # Build Flutter app with timeout and verbose output
+    UI.message("🔨 Starting Flutter iOS build...")
+    begin
+      Timeout::timeout(600) do # 10 minute timeout
+        sh("cd ../.. && flutter build ios --release --no-codesign --verbose")
+      end
+    rescue Timeout::Error
+      UI.error("Flutter build timed out after 10 minutes")
+      raise "Flutter build timeout"
+    end
     
-    # Build signed IPA using Fastlane with proper provisioning profile control
+    # Build signed IPA with timeout protection
+    UI.message("🔨 Starting Xcode archive build...")
     ipa_path = build_ios_app(
       workspace: "Runner.xcworkspace",
       scheme: "Runner",
@@ -108,7 +117,9 @@ platform :ios do
         uploadSymbols: true
       },
       output_directory: "fastlane/builds",
-      output_name: "Lumengarten.ipa"
+      output_name: "Lumengarten.ipa",
+      buildlog_path: "fastlane/logs",
+      skip_build_archive: false
     )
     UI.message("Created signed IPA at: #{ipa_path}")
     
