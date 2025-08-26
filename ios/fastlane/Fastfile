@@ -1,5 +1,4 @@
 # Fastfile for Lumengarten iOS TestFlight Deployment
-require 'timeout'
 
 default_platform(:ios)
 
