@@ -84,7 +84,9 @@ platform :ios do
     )
 
     # CocoaPods already installed in GitHub Actions workflow
-    UI.message("📦 CocoaPods already installed via Homebrew - skipping gem installation")
+    UI.message("📦 CocoaPods already installed via Homebrew - running pod install manually")
+    # Manually run pod install since Flutter can't find it
+    sh("cd .. && pod install --verbose")
 
     # Build Flutter app with specific iOS SDK version
     UI.message("🔨 Starting Flutter iOS build...")
