@@ -122,8 +122,14 @@ jobs:
         pod repo update
         pod install --verbose
     
-    - name: Setup Ruby and Fastlane
+    - name: Setup Xcode and Ruby Environment
       run: |
+        # Install Xcode command line tools and set proper SDK
+        sudo xcode-select --install || true
+        sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+        # Set macOS SDK for Ruby native extensions
+        export SDKROOT=$(xcrun --show-sdk-path)
+        export CFLAGS="-Wno-error=unused-command-line-argument-hard-error-in-future"
         cd ios
         gem install bundler
         bundle install
