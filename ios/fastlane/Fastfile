@@ -86,24 +86,31 @@ platform :ios do
     # Flutter build already completed in GitHub Actions workflow
     UI.message("🔨 Flutter iOS build completed by GitHub Actions workflow - proceeding to sign IPA...")
     
-    # Build signed IPA using Fastlane
-    UI.message("🔨 Starting Xcode archive build...")
-    ipa_path = build_ios_app(
-      workspace: "Runner.xcworkspace",
-      scheme: "Runner",
-      configuration: "Release",
-      export_method: "app-store",
-      export_options: {
-        provisioningProfiles: {
-          "com.lumengarten.lumengartenApp" => profile_uuid
-        },
-        signingStyle: "manual",
-        uploadBitcode: false,
-        uploadSymbols: true
-      },
-      output_directory: "fastlane/builds",
-      output_name: "Lumengarten.ipa"
-    )
+    # Build signed IPA using Fastlane with timeout protection
+    UI.message("🔨 Starting Xcode archive build with timeout protection...")
+    begin
+      Timeout::timeout(1800) do  # 30 minute timeout
+        ipa_path = build_ios_app(
+          workspace: "Runner.xcworkspace",
+          scheme: "Runner",
+          configuration: "Release",
+          export_method: "app-store",
+          export_options: {
+            provisioningProfiles: {
+              "com.lumengarten.lumengartenApp" => profile_uuid
+            },
+            signingStyle: "manual",
+            uploadBitcode: false,
+            uploadSymbols: true
+          },
+          output_directory: "fastlane/builds",
+          output_name: "Lumengarten.ipa"
+        )
+      end
+    rescue Timeout::Error
+      UI.error("🚨 Xcode build timed out after 30 minutes - likely stuck on Run Script phase")
+      raise "Build timeout - check for hanging Run Script phases"
+    end
     UI.message("Created signed IPA at: #{ipa_path}")
     
     # Debug environment variables
