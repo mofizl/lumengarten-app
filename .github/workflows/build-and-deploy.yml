@@ -122,17 +122,14 @@ jobs:
         pod repo update
         pod install --verbose
     
-    - name: Install Xcode Command Line Tools
+    - name: Setup Ruby without native extensions cache
       run: |
-        xcode-select --install || true
-        sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-    
-    - name: Setup Ruby and Bundler
-      uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: '3.1'
-        bundler-cache: true
-        working-directory: ios
+        # Use system Ruby to avoid native extension compilation issues
+        cd ios
+        sudo gem install bundler -v 2.4.22 --no-document
+        # Install gems without native extensions where possible
+        bundle config set --local force_ruby_platform true
+        bundle install --retry=3
     
     - name: Prepare Fastlane Environment
       env:

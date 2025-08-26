@@ -2,3 +2,8 @@ source "https://rubygems.org"
 
 gem "fastlane", "~> 2.220"
 gem "cocoapods"
+
+# Force specific gem versions to avoid native extension compilation issues
+gem "json", "~> 2.6.3"
+gem "bigdecimal", "~> 3.1.4" 
+gem "nkf", "~> 0.1.3"
