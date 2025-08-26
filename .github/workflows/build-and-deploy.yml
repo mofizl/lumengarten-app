@@ -124,10 +124,17 @@ jobs:
     
     - name: Setup Fastlane via Homebrew
       run: |
-        # Install Fastlane directly via Homebrew to avoid Ruby gem compilation
-        brew install fastlane
-        # Also install CocoaPods via Homebrew
-        brew install cocoapods
+        # Remove any conflicting gem installations first
+        sudo gem uninstall cocoapods -aIx || true
+        sudo gem uninstall fastlane -aIx || true
+        # Clean up any existing symlinks
+        sudo rm -f /usr/local/bin/pod
+        sudo rm -f /usr/local/bin/fastlane
+        # Install Fastlane and CocoaPods via Homebrew with overwrite
+        brew install --force --overwrite fastlane
+        brew install --force --overwrite cocoapods
+        brew link --overwrite cocoapods
+        brew link --overwrite fastlane
     
     - name: Prepare Fastlane Environment
       env:
