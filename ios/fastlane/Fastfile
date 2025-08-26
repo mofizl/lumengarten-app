@@ -83,10 +83,10 @@ platform :ios do
       profile_uuid: profile_uuid
     )
 
-    # Set PATH to ensure Flutter can find Homebrew CocoaPods
+    # Set PATH to include both Flutter and Homebrew CocoaPods
     UI.message("🔨 Starting Flutter iOS build with explicit PATH...")
-    # Export PATH and build Flutter app
-    sh("cd ../.. && export PATH='/opt/homebrew/bin:/usr/local/bin:$PATH' && flutter build ios --release --no-codesign")
+    # Export PATH with Flutter and CocoaPods locations
+    sh("cd ../.. && export PATH='/opt/homebrew/bin:/usr/local/bin:$FLUTTER_ROOT/bin:$PATH' && flutter build ios --release --no-codesign")
     
     # Build signed IPA using Fastlane
     UI.message("🔨 Starting Xcode archive build...")
