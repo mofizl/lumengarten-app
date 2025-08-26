@@ -1,4 +1,5 @@
 # Fastfile for Lumengarten iOS TestFlight Deployment
+require 'timeout'
 
 default_platform(:ios)
 
@@ -90,18 +91,11 @@ platform :ios do
       repo_update: true
     )
 
-    # Build Flutter app with timeout and verbose output
+    # Build Flutter app without codesigning
     UI.message("🔨 Starting Flutter iOS build...")
-    begin
-      Timeout::timeout(600) do # 10 minute timeout
-        sh("cd ../.. && flutter build ios --release --no-codesign --verbose")
-      end
-    rescue Timeout::Error
-      UI.error("Flutter build timed out after 10 minutes")
-      raise "Flutter build timeout"
-    end
+    sh("cd ../.. && flutter build ios --release --no-codesign")
     
-    # Build signed IPA with timeout protection
+    # Build signed IPA using Fastlane
     UI.message("🔨 Starting Xcode archive build...")
     ipa_path = build_ios_app(
       workspace: "Runner.xcworkspace",
@@ -117,9 +111,7 @@ platform :ios do
         uploadSymbols: true
       },
       output_directory: "fastlane/builds",
-      output_name: "Lumengarten.ipa",
-      buildlog_path: "fastlane/logs",
-      skip_build_archive: false
+      output_name: "Lumengarten.ipa"
     )
     UI.message("Created signed IPA at: #{ipa_path}")
     
