@@ -165,14 +165,36 @@ jobs:
         xcrun --show-sdk-path
         clang -arch arm64 -v 2>&1 | head -5
     
-    - name: Install Gems with Fixed Compiler Environment
+    - name: Configure Bundle for Native Extensions and Install Gems
       run: |
-        echo "🚀 Installing Ruby gems with corrected compiler environment..."
+        echo "🔧 Configuring Bundle for native extension compilation..."
+        
+        # Bundle-specific configuration for native extensions (CRITICAL)
+        bundle config set --local build.bigdecimal "--with-cflags='-arch arm64 -Wno-error=incompatible-pointer-types'"
+        bundle config set --local build.json "--with-cflags='-arch arm64 -std=c99 -Wno-error=implicit-function-declaration'"
+        bundle config set --local build.sysrandom "--with-cflags='-arch arm64 -Wno-error=incompatible-pointer-types'"
+        bundle config set --local build.nkf "--with-cflags='-arch arm64 -Wno-error=incompatible-pointer-types'"
+        bundle config set --local build.digest-crc "--with-cflags='-arch arm64 -Wno-error=incompatible-pointer-types'"
+        bundle config set --local build.ffi "--with-cflags='-arch arm64 -Wno-error=incompatible-pointer-types'"
+        
+        # Set Bundle environment variables (more reliable than shell env vars)
+        export BUNDLE_BUILD__BIGDECIMAL="--with-cflags='-arch arm64 -Wno-error=incompatible-pointer-types'"
+        export BUNDLE_BUILD__JSON="--with-cflags='-arch arm64 -std=c99 -Wno-error=implicit-function-declaration'"
+        export BUNDLE_BUILD__SYSRANDOM="--with-cflags='-arch arm64 -Wno-error=incompatible-pointer-types'"
+        
+        echo "🚀 Installing Ruby gems with Bundle-configured compiler settings..."
         # Clear any existing failed bundle state
         rm -f Gemfile.lock
-        # Install with proper macOS compilation environment
+        
+        # Install with Bundle configuration (not relying on shell environment)
         bundle install --jobs 4 --retry 3
+        
         echo "✅ Gem installation completed successfully!"
+        
+        # Verify critical gems installed correctly
+        echo "🔍 Verifying gem installations:"
+        bundle exec ruby -e "require 'bigdecimal'; puts 'bigdecimal: OK'"
+        bundle exec ruby -e "require 'json'; puts 'json: OK'"
     
     - name: Prepare Fastlane Environment
       env:
