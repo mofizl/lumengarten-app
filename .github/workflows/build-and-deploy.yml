@@ -104,6 +104,10 @@ jobs:
     
     - name: Get dependencies and configure iOS SDK
       run: |
+        # CRITICAL: Enable iOS support in Flutter configuration first
+        flutter config --enable-ios
+        flutter config --list | grep enable-ios
+        
         flutter clean
         flutter pub get
         # List available iOS SDKs
