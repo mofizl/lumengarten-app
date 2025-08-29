@@ -91,23 +91,23 @@ platform :ios do
     ENV['LANG'] = 'en_US.UTF-8'
     ENV['LC_ALL'] = 'en_US.UTF-8'
     
-    # ULTIMATE SOLUTION: Use Bundle for clean Ruby environment (2024)
-    UI.message("🚀 Using Bundler for clean Ruby/CocoaPods environment...")
+    # SIMPLIFIED SOLUTION: Use direct gem installation (Bundle-free approach)
+    UI.message("🚀 Using direct gem installation to avoid Bundle dependency conflicts...")
     
-    # Verify Bundler installed all gems correctly (including bigdecimal and CocoaPods)
+    # Verify direct CocoaPods installation
     begin
-      sh("bundle exec pod --version")
-      UI.success("✅ CocoaPods working via Bundle!")
-    rescue => bundle_error
-      UI.error("❌ Bundle CocoaPods issue: #{bundle_error}")
-      UI.message("🔧 Ensuring gems are properly installed via Bundle...")
+      sh("pod --version")
+      UI.success("✅ CocoaPods working directly!")
+    rescue => pod_error
+      UI.error("❌ Direct CocoaPods issue: #{pod_error}")
+      UI.message("🔧 Installing CocoaPods directly...")
       
-      # Force bundle install with native extensions
-      sh("bundle install --jobs 4")
+      # Install CocoaPods directly
+      sh("gem install cocoapods --no-document")
       
       # Try CocoaPods again
-      sh("bundle exec pod --version")
-      UI.success("✅ CocoaPods working after bundle install!")
+      sh("pod --version")
+      UI.success("✅ CocoaPods working after direct installation!")
     end
     
     # Fastlane now handles the complete Flutter build

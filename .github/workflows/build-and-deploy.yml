@@ -165,81 +165,41 @@ jobs:
         # Clean macOS environment for Ruby setup
         MACOSX_DEPLOYMENT_TARGET: "13.0"
     
-    - name: Force Clean Bundle Install with Latest Dependencies
+    - name: Install Gems Directly (Bundle-Free Approach)  
       run: |
-        echo "🔧 Force installing latest gems with clean dependency resolution..."
+        echo "🔧 Installing gems directly without Bundle to avoid dependency conflicts..."
         
-        # Verify Ruby installation is isolated
+        # Verify Ruby installation
         which ruby
         ruby --version
-        which bundle
         
-        # Complete bundle state reset
+        # Remove any Bundle-related files that might cause conflicts
         rm -f Gemfile.lock
         rm -rf .bundle
-        bundle config --delete local
+        rm -f Gemfile
         
-        # Force update bundler to latest
-        gem update bundler
+        # Install gems directly to avoid all Bundle dependency resolution issues
+        echo "📦 Installing Fastlane and CocoaPods directly..."
+        gem install fastlane --no-document --verbose
+        gem install cocoapods --no-document --verbose
         
-        # Install gems with latest dependencies and conflict resolution
-        bundle install --jobs 4 --retry 3 --full-index
+        # Verify installations
+        echo "🔍 Verifying direct gem installations..."
+        fastlane --version
+        pod --version
         
-        # If bundle install fails due to native gem compilation, use system approach
-        if [ $? -ne 0 ]; then
-          echo "🔄 Bundle install failed, using system gem approach to avoid native compilation..."
-          
-          # Skip Bundle completely - install gems directly to system
-          echo "📦 Installing Fastlane and CocoaPods directly..."
-          gem install fastlane --no-document
-          gem install cocoapods --no-document
-          
-          # Verify installations
-          fastlane --version || echo "Fastlane direct install failed"
-          pod --version || echo "CocoaPods direct install failed"
-          
-          echo "✅ System gems installed directly, skipping Bundle dependency resolution"
-        fi
-        
-        # Test gems and determine working method
-        echo "🔍 Testing gem availability and determining best execution method..."
-        
-        # Test Bundle first (only if bundle install succeeded)
-        USE_BUNDLE=false
-        
-        echo "Testing Bundle execution..."
-        if bundle exec pod --version 2>/dev/null && bundle exec fastlane --version 2>/dev/null; then
-          echo "✅ Both CocoaPods and Fastlane working via Bundle"
-          USE_BUNDLE=true
-        else
-          echo "❌ Bundle execution failed, testing direct installation..."
-          
-          # Test direct gems
-          if pod --version 2>/dev/null && fastlane --version 2>/dev/null; then
-            echo "✅ Both CocoaPods and Fastlane working directly (system install)"
-            USE_BUNDLE=false
-          else
-            echo "❌ Neither Bundle nor direct gems working properly"
-            echo "Forcing direct gem installation as fallback..."
-            gem install cocoapods fastlane --no-document
-            USE_BUNDLE=false
-          fi
-        fi
-        
-        # Export bundle usage decision for later steps
-        echo "USE_BUNDLE=${USE_BUNDLE}" >> $GITHUB_ENV
-        echo "Final execution method: $(if [ "$USE_BUNDLE" = "true" ]; then echo "Bundle"; else echo "Direct"; fi)"
-        echo "✅ Gem installation and method determination completed!"
+        # Force direct gem usage (no Bundle)
+        echo "USE_BUNDLE=false" >> $GITHUB_ENV
+        echo "✅ Direct gem installation completed successfully!"
     
     - name: Setup CocoaPods with iOS Environment (After Clean Gem Installation)
       run: |
         echo "🔧 Setting up CocoaPods with iOS environment ONLY AFTER clean gem compilation..."
         cd ios
         
-        # Verify we're using the correct Ruby/Bundle with clean gems
+        # Verify we're using the correct Ruby installation
         which ruby
-        which bundle
-        bundle exec ruby --version
+        ruby --version
         
         # Skip bundle exec verification since Bundle may not work at this point
         echo "🔍 Skipping gem compilation verification (Bundle may not be working)..."
@@ -253,29 +213,21 @@ jobs:
         echo "IPHONEOS_DEPLOYMENT_TARGET: ${IPHONEOS_DEPLOYMENT_TARGET}"
         echo "SDKROOT: ${SDKROOT}"
         
-        # Use appropriate command based on installation method
-        echo "🔍 Using CocoaPods with method determined in previous step..."
-        echo "USE_BUNDLE environment variable: $USE_BUNDLE"
-        
-        if [ "$USE_BUNDLE" = "true" ]; then
-          echo "📦 Using Bundle-managed CocoaPods..."
-          POD_CMD="bundle exec pod"
-        else
-          echo "📦 Using direct CocoaPods installation..."
-          POD_CMD="pod"
-        fi
+        # Use direct CocoaPods installation (Bundle-free)
+        echo "🔍 Using direct CocoaPods installation (Bundle completely bypassed)..."
+        echo "USE_BUNDLE environment variable: $USE_BUNDLE (should be false)"
         
         # Clean CocoaPods setup
         echo "🧹 Cleaning CocoaPods environment..."
-        $POD_CMD cache clean --all || echo "Cache clean failed, continuing..."
+        pod cache clean --all || echo "Cache clean failed, continuing..."
         rm -rf Pods
         rm -f Podfile.lock
         
-        # Update repo and install
+        # Update repo and install using direct CocoaPods
         echo "📦 Installing CocoaPods dependencies..."
-        $POD_CMD repo update
-        $POD_CMD install --verbose
-        echo "✅ CocoaPods setup completed successfully"
+        pod repo update
+        pod install --verbose
+        echo "✅ CocoaPods setup completed successfully with direct installation"
     
     - name: Prepare Fastlane Environment
       env:
@@ -323,36 +275,19 @@ jobs:
         cd ios
         echo "🚀 Starting Fastlane with Multi-Strategy Approach..."
         
-        # Use the method determined during gem installation
-        echo "🚀 Starting Fastlane with method determined earlier..."
-        echo "USE_BUNDLE environment variable: $USE_BUNDLE"
+        # Use direct Fastlane execution (Bundle completely eliminated)
+        echo "🚀 Starting Fastlane with direct execution (Bundle-free approach)..."
+        echo "USE_BUNDLE environment variable: $USE_BUNDLE (should be false)"
         
-        if [ "$USE_BUNDLE" = "true" ]; then
-          echo "📋 Using Bundle-managed Fastlane..."
-          if bundle exec fastlane testflight; then
-            echo "✅ Bundle-managed Fastlane succeeded!"
-          else
-            echo "❌ Bundle-managed Fastlane failed, trying direct fallback..."
-            if fastlane testflight; then
-              echo "✅ Direct Fastlane fallback succeeded!"
-            else
-              echo "❌ Both Bundle and direct Fastlane failed"
-              exit 1
-            fi
-          fi
+        echo "📋 Using direct Fastlane execution..."
+        if fastlane testflight; then
+          echo "✅ Direct Fastlane succeeded!"
         else
-          echo "📋 Using direct Fastlane execution..."
-          if fastlane testflight; then
-            echo "✅ Direct Fastlane succeeded!"
-          else
-            echo "❌ Direct Fastlane failed, trying Bundle fallback..."
-            if bundle exec fastlane testflight; then
-              echo "✅ Bundle fallback succeeded!"
-            else
-              echo "❌ Both direct and Bundle Fastlane failed"
-              exit 1
-            fi
-          fi
+          echo "❌ Direct Fastlane failed"
+          echo "🔍 Checking Fastlane installation..."
+          which fastlane
+          fastlane --version
+          exit 1
         fi
     
     - name: Upload IPA Artifact
