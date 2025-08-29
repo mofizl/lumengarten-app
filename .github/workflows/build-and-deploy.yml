@@ -185,23 +185,20 @@ jobs:
         # Install gems with latest dependencies and conflict resolution
         bundle install --jobs 4 --retry 3 --full-index
         
-        # If bundle install fails, try comprehensive gem resolution
+        # If bundle install fails due to native gem compilation, use system approach
         if [ $? -ne 0 ]; then
-          echo "🔄 Bundle install failed, trying comprehensive resolution..."
+          echo "🔄 Bundle install failed, using system gem approach to avoid native compilation..."
           
-          # Check available gem versions
-          gem list json -r | head -10
-          echo "Available CocoaPods versions:"
-          gem list cocoapods -r | head -5
+          # Skip Bundle completely - install gems directly to system
+          echo "📦 Installing Fastlane and CocoaPods directly..."
+          gem install fastlane --no-document
+          gem install cocoapods --no-document
           
-          # Install core gems directly first
-          gem install json
-          gem install bigdecimal
-          gem install cocoapods
-          gem install fastlane
+          # Verify installations
+          fastlane --version || echo "Fastlane direct install failed"
+          pod --version || echo "CocoaPods direct install failed"
           
-          # Retry bundle install with updated gems
-          bundle install --jobs 4 --retry 3
+          echo "✅ System gems installed directly, skipping Bundle dependency resolution"
         fi
         
         # Verify critical gems installation
@@ -210,10 +207,29 @@ jobs:
         bundle exec ruby -e "require 'json'; puts 'JSON: ' + JSON::VERSION"
         bundle exec ruby -e "require 'bigdecimal'; puts 'BigDecimal: OK'" || echo "BigDecimal: Optional (compilation may fail)"
         
-        # Test pod command specifically
-        echo "🔍 Testing CocoaPods command..."
-        bundle exec pod --version || echo "❌ CocoaPods failed - will retry with alternative approach"
-        echo "✅ Clean gem installation completed!"
+        # Test gems via bundle or direct installation
+        echo "🔍 Testing gem availability..."
+        if bundle exec pod --version 2>/dev/null; then
+          echo "✅ CocoaPods working via Bundle"
+          USE_BUNDLE=true
+        elif pod --version 2>/dev/null; then
+          echo "✅ CocoaPods working directly (system install)"
+          USE_BUNDLE=false
+        else
+          echo "❌ CocoaPods not available via any method"
+        fi
+        
+        if bundle exec fastlane --version 2>/dev/null; then
+          echo "✅ Fastlane working via Bundle"
+        elif fastlane --version 2>/dev/null; then
+          echo "✅ Fastlane working directly (system install)"
+        else
+          echo "❌ Fastlane not available via any method"
+        fi
+        
+        # Export bundle usage decision for later steps
+        echo "USE_BUNDLE=${USE_BUNDLE:-false}" >> $GITHUB_ENV
+        echo "✅ Gem installation and testing completed!"
     
     - name: Setup CocoaPods with iOS Environment (After Clean Gem Installation)
       run: |
@@ -238,28 +254,28 @@ jobs:
         echo "IPHONEOS_DEPLOYMENT_TARGET: ${IPHONEOS_DEPLOYMENT_TARGET}"
         echo "SDKROOT: ${SDKROOT}"
         
-        # Test CocoaPods command before proceeding
-        echo "🔍 Testing CocoaPods availability..."
-        if ! bundle exec pod --version; then
-          echo "🔄 CocoaPods not working via bundle, trying direct gem installation..."
-          
-          # Install CocoaPods directly if bundle exec fails
-          gem install cocoapods
-          
-          # Test direct pod command
-          pod --version
+        # Use appropriate command based on installation method
+        echo "🔍 Using CocoaPods with method determined in previous step..."
+        echo "USE_BUNDLE environment variable: $USE_BUNDLE"
+        
+        if [ "$USE_BUNDLE" = "true" ]; then
+          echo "📦 Using Bundle-managed CocoaPods..."
+          POD_CMD="bundle exec pod"
+        else
+          echo "📦 Using direct CocoaPods installation..."
+          POD_CMD="pod"
         fi
         
         # Clean CocoaPods setup
         echo "🧹 Cleaning CocoaPods environment..."
-        pod cache clean --all || bundle exec pod cache clean --all
+        $POD_CMD cache clean --all || echo "Cache clean failed, continuing..."
         rm -rf Pods
         rm -f Podfile.lock
         
         # Update repo and install
         echo "📦 Installing CocoaPods dependencies..."
-        pod repo update || bundle exec pod repo update
-        pod install --verbose || bundle exec pod install --verbose
+        $POD_CMD repo update
+        $POD_CMD install --verbose
         echo "✅ CocoaPods setup completed successfully"
     
     - name: Prepare Fastlane Environment
@@ -308,20 +324,35 @@ jobs:
         cd ios
         echo "🚀 Starting Fastlane with Multi-Strategy Approach..."
         
-        # Strategy 1: Try Bundle-managed Fastlane first (stable Ruby 3.3.6)
-        echo "📋 Strategy 1: Bundle-managed Fastlane..."
-        if bundle exec fastlane testflight; then
-          echo "✅ Bundle strategy succeeded!"
-        else
-          echo "❌ Bundle strategy failed, trying direct Fastlane..."
-          
-          # Strategy 2: Direct Fastlane execution (bypass Bundle completely)
-          echo "📋 Strategy 2: Direct Fastlane execution..."
-          if fastlane testflight; then
-            echo "✅ Direct Fastlane strategy succeeded!"
+        # Use the method determined during gem installation
+        echo "🚀 Starting Fastlane with method determined earlier..."
+        echo "USE_BUNDLE environment variable: $USE_BUNDLE"
+        
+        if [ "$USE_BUNDLE" = "true" ]; then
+          echo "📋 Using Bundle-managed Fastlane..."
+          if bundle exec fastlane testflight; then
+            echo "✅ Bundle-managed Fastlane succeeded!"
           else
-            echo "❌ Both strategies failed, this needs manual investigation"
-            exit 1
+            echo "❌ Bundle-managed Fastlane failed, trying direct fallback..."
+            if fastlane testflight; then
+              echo "✅ Direct Fastlane fallback succeeded!"
+            else
+              echo "❌ Both Bundle and direct Fastlane failed"
+              exit 1
+            fi
+          fi
+        else
+          echo "📋 Using direct Fastlane execution..."
+          if fastlane testflight; then
+            echo "✅ Direct Fastlane succeeded!"
+          else
+            echo "❌ Direct Fastlane failed, trying Bundle fallback..."
+            if bundle exec fastlane testflight; then
+              echo "✅ Bundle fallback succeeded!"
+            else
+              echo "❌ Both direct and Bundle Fastlane failed"
+              exit 1
+            fi
           fi
         fi
     

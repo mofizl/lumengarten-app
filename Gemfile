@@ -1,15 +1,10 @@
 source 'https://rubygems.org'
 
+# Minimal Gemfile - avoid native gem compilation issues in CI
+# System gems will be used instead of compiling problematic gems
+
 # Fastlane for iOS deployment
 gem 'fastlane'
 
-# CocoaPods for iOS dependency management - use latest version
+# CocoaPods - use latest version, let it handle its own dependencies
 gem 'cocoapods', '>= 1.16.0'
-
-# JSON - let CocoaPods determine compatible version
-gem 'json'
-
-# Ruby 3.3 compatibility gems (some gems may not be bundled by default)
-gem 'bigdecimal'
-gem 'mutex_m'
-gem 'base64'
