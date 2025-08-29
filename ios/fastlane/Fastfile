@@ -91,10 +91,21 @@ platform :ios do
     ENV['LANG'] = 'en_US.UTF-8'
     ENV['LC_ALL'] = 'en_US.UTF-8'
     
-    # Debug CocoaPods setup
-    UI.message("🔍 Debugging CocoaPods setup...")
-    sh("which pod && pod --version")
-    sh("which ruby && ruby --version")
+    # Install CocoaPods directly in Fastlane if not found
+    UI.message("🔍 Checking CocoaPods availability...")
+    begin
+      sh("which pod")
+      sh("pod --version")
+      UI.success("✅ CocoaPods found and working!")
+    rescue => e
+      UI.message("⚠️ CocoaPods not found or broken, installing via Homebrew...")
+      sh("brew install cocoapods")
+      sh("brew link --overwrite cocoapods")
+      # Force symlink to ensure it's in PATH
+      sh("sudo ln -sf /opt/homebrew/bin/pod /usr/local/bin/pod || sudo ln -sf /usr/local/bin/pod /usr/local/bin/pod")
+      sh("pod --version")
+      UI.success("✅ CocoaPods installed and working!")
+    end
     
     # Fastlane now handles the complete Flutter build
     UI.message("🔨 Building Flutter iOS app via Fastlane...")
