@@ -91,56 +91,133 @@ platform :ios do
     ENV['LANG'] = 'en_US.UTF-8'
     ENV['LC_ALL'] = 'en_US.UTF-8'
     
-    # Install CocoaPods directly in Fastlane if not found
-    UI.message("🔍 Checking CocoaPods availability...")
+    # COMPREHENSIVE FIX: Ruby Environment and CocoaPods Installation (2024)
+    UI.message("🔧 Applying comprehensive Ruby 3.4.5 + macOS-14 compatibility fixes...")
+    
+    # Check if CocoaPods is working first
+    cocoapods_working = false
     begin
       sh("which pod")
       sh("pod --version")
       UI.success("✅ CocoaPods found and working!")
+      cocoapods_working = true
     rescue => e
-      UI.message("⚠️ CocoaPods not found or broken, fixing Ruby 3.4.5 gem dependencies...")
-      
-      # CRITICAL: Ruby 3.4.5 removed bigdecimal from standard library - now requires explicit installation
-      UI.message("🔧 Setting up native extension compilation environment...")
-      
-      # Ensure Xcode command line tools are available for native gem compilation
-      sh("xcode-select --install || echo 'Command line tools already installed'")
-      
-      # Install missing standard library gems for Ruby 3.4.5
-      sh("gem install minitest drb mutex_m base64")
-      
-      # Install bigdecimal with proper native compilation (required by ActiveSupport/CocoaPods)
-      UI.message("🔢 Installing bigdecimal native extension (required by CocoaPods)...")
+      UI.message("⚠️ CocoaPods not available or broken - implementing comprehensive fix...")
+    end
+    
+    unless cocoapods_working
+      # STEP 1: Force proper development tools configuration (Critical for macOS-14)
+      UI.message("🔧 Step 1: Ensuring development tools are properly configured...")
       begin
-        # Try architecture-specific installation for Apple Silicon
-        sh("arch -arm64 gem install bigdecimal")
-        UI.success("✅ bigdecimal installed with ARM64 architecture")
-      rescue => bigdecimal_error
-        UI.error("❌ ARM64 installation failed: #{bigdecimal_error}")
+        # Verify Command Line Tools are selected correctly
+        dev_path = sh("xcode-select -p").strip
+        UI.message("Current developer path: #{dev_path}")
+        
+        # Force Command Line Tools selection if needed
+        unless dev_path.include?("/Library/Developer/CommandLineTools")
+          UI.message("🔄 Forcing Command Line Tools selection...")
+          sh("sudo xcode-select -s /Library/Developer/CommandLineTools")
+        end
+        
+        # Verify compiler availability
+        sh("which gcc && gcc --version")
+        sh("which make && make --version")
+        UI.success("✅ Development tools verified")
+        
+      rescue => dev_error
+        UI.error("❌ Development tools issue: #{dev_error}")
+        UI.message("🚨 Attempting to fix development tools...")
+        sh("sudo xcode-select --install || echo 'Installation triggered'")
+        sh("sleep 10")  # Allow some setup time
+        sh("sudo xcode-select -s /Library/Developer/CommandLineTools")
+      end
+      
+      # STEP 2: Set up proper Ruby environment with compilation flags
+      UI.message("🔧 Step 2: Setting up Ruby compilation environment...")
+      ENV['CPPFLAGS'] = "-I$(brew --prefix)/include"
+      ENV['LDFLAGS'] = "-L$(brew --prefix)/lib"
+      ENV['PATH'] = "/opt/homebrew/bin:/usr/local/bin:#{ENV['PATH']}"
+      
+      # STEP 3: Install Ruby 3.4.5 standard library gems (CRITICAL)
+      UI.message("🔧 Step 3: Installing Ruby 3.4.5 standard library gems...")
+      standard_gems = ["minitest", "drb", "mutex_m", "base64"]
+      standard_gems.each do |gem_name|
         begin
-          # Fallback: Install with explicit compilation flags
-          sh("gem install bigdecimal -- --with-cflags='-Wno-error'")
-          UI.success("✅ bigdecimal installed with compilation flags")
-        rescue => final_error
-          UI.error("❌ All bigdecimal installation methods failed: #{final_error}")
-          UI.message("🔄 Trying Homebrew Ruby environment...")
-          
-          # Final fallback: Use system Ruby/Homebrew environment
-          ENV['PATH'] = "/usr/local/bin:/opt/homebrew/bin:#{ENV['PATH']}"
-          sh("brew install ruby")
-          sh("/opt/homebrew/bin/gem install bigdecimal")
-          UI.success("✅ bigdecimal installed via Homebrew Ruby")
+          sh("gem install #{gem_name}")
+          UI.message("✅ #{gem_name} installed")
+        rescue => gem_error
+          UI.error("❌ Failed to install #{gem_name}: #{gem_error}")
         end
       end
       
-      # Then install/reinstall CocoaPods
-      sh("brew reinstall cocoapods")
-      sh("brew link --overwrite cocoapods")
+      # STEP 4: Install bigdecimal with multiple fallback strategies
+      UI.message("🔧 Step 4: Installing bigdecimal (critical for CocoaPods)...")
+      bigdecimal_installed = false
       
-      # Update PATH to include Homebrew bin directories
-      ENV['PATH'] = "/usr/local/bin:/opt/homebrew/bin:#{ENV['PATH']}"
-      sh("pod --version")
-      UI.success("✅ CocoaPods installed and working!")
+      # Strategy 1: Direct gem install with proper environment
+      unless bigdecimal_installed
+        begin
+          sh("gem install bigdecimal")
+          UI.success("✅ bigdecimal installed successfully!")
+          bigdecimal_installed = true
+        rescue => e1
+          UI.error("❌ Direct install failed: #{e1}")
+        end
+      end
+      
+      # Strategy 2: Install with compilation flags
+      unless bigdecimal_installed
+        begin
+          sh("gem install bigdecimal -- --with-cflags='-Wno-error=incompatible-pointer-types'")
+          UI.success("✅ bigdecimal installed with compilation flags!")
+          bigdecimal_installed = true
+        rescue => e2
+          UI.error("❌ Compilation flags method failed: #{e2}")
+        end
+      end
+      
+      # Strategy 3: Use Homebrew's Ruby directly
+      unless bigdecimal_installed
+        begin
+          sh("brew install ruby")
+          homebrew_gem = "/opt/homebrew/bin/gem"
+          if File.exist?(homebrew_gem)
+            sh("#{homebrew_gem} install bigdecimal")
+            UI.success("✅ bigdecimal installed via Homebrew Ruby!")
+            bigdecimal_installed = true
+          else
+            homebrew_gem = "/opt/homebrew/lib/ruby/gems/3.4.0/bin/gem"
+            if File.exist?(homebrew_gem)
+              sh("#{homebrew_gem} install bigdecimal")
+              UI.success("✅ bigdecimal installed via Homebrew Ruby (alternative path)!")
+              bigdecimal_installed = true
+            end
+          end
+        rescue => e3
+          UI.error("❌ Homebrew Ruby method failed: #{e3}")
+        end
+      end
+      
+      # Final check for bigdecimal
+      unless bigdecimal_installed
+        UI.error("🚨 CRITICAL: bigdecimal installation failed with all methods!")
+        UI.message("🔄 Attempting to continue with system Ruby...")
+      end
+      
+      # STEP 5: Install CocoaPods via Homebrew (most reliable method)
+      UI.message("🔧 Step 5: Installing CocoaPods via Homebrew...")
+      begin
+        sh("brew install --force --overwrite cocoapods")
+        sh("brew link --overwrite cocoapods")
+        
+        # Verify CocoaPods is working
+        sh("pod --version")
+        UI.success("✅ CocoaPods installed and working via Homebrew!")
+        
+      rescue => cocoapods_error
+        UI.error("❌ CocoaPods installation failed: #{cocoapods_error}")
+        raise "CocoaPods installation completely failed after comprehensive fixes"
+      end
     end
     
     # Fastlane now handles the complete Flutter build

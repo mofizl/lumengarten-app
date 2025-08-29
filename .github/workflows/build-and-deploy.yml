@@ -123,35 +123,60 @@ jobs:
         pod repo update
         pod install --verbose
     
-    - name: Setup Build Environment and Xcode Tools
+    - name: Fix macOS-14 Development Tools and Ruby Environment (2024 Critical Fix)
       run: |
-        # Ensure Xcode command line tools are available (required for native gem compilation)
-        xcode-select --install || echo "Command line tools already installed"
-        xcode-select -p
-        # Verify build tools are working
-        which gcc || echo "GCC not found"
-        which clang || echo "Clang not found"
+        # CRITICAL FIX: macOS-14 GitHub Actions Runner Issues
+        echo "🔧 Applying macOS-14 GitHub Actions fixes for Ruby/Xcode compatibility..."
         
-    - name: Setup Fastlane via Homebrew and build Flutter
+        # Force explicit Command Line Tools selection (required for macOS-14 runners)
+        sudo xcode-select --reset
+        sudo xcode-select -s /Library/Developer/CommandLineTools
+        xcode-select -p
+        
+        # Verify development tools are properly configured
+        echo "🔍 Verifying development tools..."
+        which gcc && gcc --version
+        which clang && clang --version
+        which make && make --version
+        
+        # Install/reinstall Command Line Tools if needed (2024 macOS-14 fix)
+        if ! gcc --version > /dev/null 2>&1; then
+          echo "🚨 Installing Command Line Tools..."
+          # Accept license and install tools non-interactively
+          sudo xcode-select --install 2>/dev/null || true
+          sleep 30  # Allow installation to start
+          # Accept Xcode license non-interactively
+          sudo xcodebuild -license accept 2>/dev/null || true
+          # Final verification
+          sudo xcode-select -s /Library/Developer/CommandLineTools
+          which gcc && gcc --version
+        fi
+        
+        # Remove conflicting Ruby/Gem installations completely (Clean slate)
+        echo "🧹 Cleaning conflicting Ruby environments..."
+        sudo gem uninstall cocoapods -aIx 2>/dev/null || true
+        sudo gem uninstall fastlane -aIx 2>/dev/null || true
+        sudo rm -f /usr/local/bin/pod /usr/local/bin/fastlane
+        
+        # Set consistent environment for Ruby gem compilation
+        echo "🔧 Setting Ruby compilation environment..."
+        export CPPFLAGS="-I$(brew --prefix)/include"
+        export LDFLAGS="-L$(brew --prefix)/lib"
+        echo "CPPFLAGS=-I$(brew --prefix)/include" >> $GITHUB_ENV
+        echo "LDFLAGS=-L$(brew --prefix)/lib" >> $GITHUB_ENV
+        
+    - name: Install Fastlane via Homebrew (Comprehensive Solution)
       run: |
-        # Remove any conflicting gem installations first
-        sudo gem uninstall cocoapods -aIx || true
-        sudo gem uninstall fastlane -aIx || true
-        # Clean up any existing symlinks
-        sudo rm -f /usr/local/bin/pod
-        sudo rm -f /usr/local/bin/fastlane
-        # Install Fastlane and CocoaPods via Homebrew with overwrite
+        # Install Fastlane via Homebrew (let Fastlane handle CocoaPods and Ruby gems)
+        echo "🚀 Installing Fastlane - Ruby environment fixes now handled in Fastfile..."
         brew install --force --overwrite fastlane
-        brew install --force --overwrite cocoapods
-        brew link --overwrite cocoapods
         brew link --overwrite fastlane
+        
         # Ensure Homebrew binaries are in PATH for Flutter
         echo "/opt/homebrew/bin:/usr/local/bin" >> $GITHUB_PATH
-        # Explicitly set CocoaPods path for Flutter to use Homebrew version
-        sudo ln -sf /opt/homebrew/bin/pod /usr/local/bin/pod || sudo ln -sf /usr/local/bin/pod /usr/local/bin/pod
-        which pod && pod --version
-        # Let Fastlane handle the complete Flutter build process including Ruby 3.4.5 gem dependencies
-        echo "Skipping flutter build ios - Fastlane will handle complete build and bigdecimal installation"
+        
+        # Let Fastlane handle the complete Ruby environment, CocoaPods, and bigdecimal installation
+        echo "✅ Fastlane installed - comprehensive Ruby/CocoaPods fixes delegated to Fastfile"
     
     - name: Prepare Fastlane Environment
       env:
