@@ -110,58 +110,43 @@ jobs:
         xcodebuild -showsdks | grep iOS
         # NOTE: IPHONEOS_DEPLOYMENT_TARGET will be set AFTER gem installation
     
-    - name: Setup Ruby Environment with Flutter iOS Environment Fix
-      uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: 3.4.5
-        bundler-cache: false
-        working-directory: .
-    
-    - name: Critical Fix - Clear Flutter iOS Environment Before Gem Compilation
+    - name: Pre-Ruby Environment Setup - Clear iOS Variables
       run: |
-        echo "🔧 CRITICAL: Clearing Flutter iOS environment variables before gem compilation..."
+        echo "🔧 PRE-SETUP: Clearing iOS environment before Ruby gem compilation..."
         
-        # CRITICAL: Flutter sets IPHONEOS_DEPLOYMENT_TARGET which breaks Ruby gem compilation
-        echo "Current iOS-related environment:"
-        env | grep -i ios || echo "No iOS env vars found"
-        env | grep -i iphone || echo "No iPhone env vars found"
-        
-        # Force clear ALL iOS-related environment variables
-        unset IPHONEOS_DEPLOYMENT_TARGET 2>/dev/null || true
-        unset TARGETED_DEVICE_FAMILY 2>/dev/null || true
-        unset ARCHS 2>/dev/null || true
-        unset FLUTTER_IOS_DEPLOYMENT_TARGET 2>/dev/null || true
-        
-        # Set macOS-only environment for gem compilation
+        # Set macOS-only environment for gem compilation (before Ruby setup)
         export MACOSX_DEPLOYMENT_TARGET="13.0"
         export SDKROOT="$(xcrun --show-sdk-path)"
         
-        # Verify no iOS environment contamination
-        echo "After cleanup:"
-        env | grep -i ios || echo "✅ No iOS env vars"
-        env | grep -i iphone || echo "✅ No iPhone env vars"
-        echo "macOS SDKROOT: $(xcrun --show-sdk-path)"
-        
-        # Save to GitHub environment
+        # Save to GitHub environment (BEFORE ruby setup)
         echo "MACOSX_DEPLOYMENT_TARGET=13.0" >> $GITHUB_ENV
         echo "SDKROOT=$(xcrun --show-sdk-path)" >> $GITHUB_ENV
+        
+        # Force Command Line Tools selection
+        sudo xcode-select -s /Library/Developer/CommandLineTools
+        xcode-select -p
+        
+        echo "✅ Clean environment prepared for Ruby gem compilation"
     
-    - name: Install Ruby Gems (iOS Environment Cleared)
+    - name: Setup Ruby Environment with Clean Bundler Cache
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.4.5
+        bundler-cache: true  # Now safe with clean macOS environment
+        working-directory: .
+      env:
+        # Ensure clean macOS environment for bundler cache
+        MACOSX_DEPLOYMENT_TARGET: "13.0"
+    
+    - name: Verify Ruby Gems Installation
       run: |
-        echo "🚀 Installing Ruby gems with clean macOS environment..."
+        echo "🔍 Verifying Ruby gems installed by bundler-cache..."
         
-        # Clear any cached failures
-        rm -f Gemfile.lock
-        
-        # Install gems without iOS environment contamination
-        bundle install --jobs 4 --retry 3
-        
-        # Verify critical gems
-        echo "🔍 Verifying installations:"
+        # Verify critical gems (bundler-cache already installed them)
         bundle exec ruby -e "require 'bigdecimal'; puts 'bigdecimal: OK'"
         bundle exec ruby -e "require 'json'; puts 'json: OK'"
         bundle exec pod --version
-        echo "✅ All gems installed successfully!"
+        echo "✅ All gems verified successfully!"
     
     - name: Setup CocoaPods AFTER Gem Installation
       run: |
