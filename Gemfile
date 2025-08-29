@@ -9,9 +9,7 @@ gem 'cocoapods', '>= 1.16.0'
 # JSON - let CocoaPods determine compatible version
 gem 'json'
 
-# Ruby 3.4.5 standard library gems (removed from default gems)
+# Ruby 3.3 compatibility gems (some gems may not be bundled by default)
 gem 'bigdecimal'
-gem 'minitest'
-gem 'drb'
-gem 'mutex_m' 
+gem 'mutex_m'
 gem 'base64'

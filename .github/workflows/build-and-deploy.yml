@@ -140,10 +140,10 @@ jobs:
         
         echo "✅ Ruby environment completely reset for clean compilation"
     
-    - name: Setup Ruby Environment with Isolated Installation
+    - name: Setup Ruby Environment with Stable Version
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 3.4.5
+        ruby-version: 3.3.6  # Use latest stable Ruby 3.3 - 3.4.x is too new
         bundler-cache: false  # Manual control to prevent conflicts
         working-directory: .
       env:
@@ -170,17 +170,22 @@ jobs:
         # Install gems with latest dependencies and conflict resolution
         bundle install --jobs 4 --retry 3 --full-index
         
-        # If bundle install fails due to JSON conflicts, try manual resolution
+        # If bundle install fails, try comprehensive gem resolution
         if [ $? -ne 0 ]; then
-          echo "🔄 Bundle install failed, trying manual JSON resolution..."
+          echo "🔄 Bundle install failed, trying comprehensive resolution..."
           
-          # Check available JSON versions
-          gem list json -r
+          # Check available gem versions
+          gem list json -r | head -10
+          echo "Available CocoaPods versions:"
+          gem list cocoapods -r | head -5
           
-          # Try installing a specific JSON version that's available
-          gem install json -v "~> 2.9"
+          # Install core gems directly first
+          gem install json
+          gem install bigdecimal
+          gem install cocoapods
+          gem install fastlane
           
-          # Retry bundle install
+          # Retry bundle install with updated gems
           bundle install --jobs 4 --retry 3
         fi
         
@@ -262,7 +267,7 @@ jobs:
         echo "FLUTTER_ROOT=$FLUTTER_HOME" >> $GITHUB_ENV
         echo "FLUTTER_BUILD_DIR=$(pwd)/build" >> $GITHUB_ENV
     
-    - name: Build and Deploy with Fastlane via Bundle (Extended Timeout)
+    - name: Build and Deploy with Fastlane (Multi-Strategy Approach)
       timeout-minutes: 75
       env:
         IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
@@ -277,8 +282,24 @@ jobs:
         FLUTTER_BUILD_DIR: ${{ env.FLUTTER_BUILD_DIR }}
       run: |
         cd ios
-        echo "🚀 Starting Bundle-managed Fastlane (clean Ruby environment)..."
-        bundle exec fastlane testflight
+        echo "🚀 Starting Fastlane with Multi-Strategy Approach..."
+        
+        # Strategy 1: Try Bundle-managed Fastlane first (stable Ruby 3.3.6)
+        echo "📋 Strategy 1: Bundle-managed Fastlane..."
+        if bundle exec fastlane testflight; then
+          echo "✅ Bundle strategy succeeded!"
+        else
+          echo "❌ Bundle strategy failed, trying direct Fastlane..."
+          
+          # Strategy 2: Direct Fastlane execution (bypass Bundle completely)
+          echo "📋 Strategy 2: Direct Fastlane execution..."
+          if fastlane testflight; then
+            echo "✅ Direct Fastlane strategy succeeded!"
+          else
+            echo "❌ Both strategies failed, this needs manual investigation"
+            exit 1
+          fi
+        fi
     
     - name: Upload IPA Artifact
       uses: actions/upload-artifact@v4

@@ -83,7 +83,7 @@ platform :ios do
       profile_uuid: profile_uuid
     )
 
-    # Set Flutter environment for CI FIRST
+    # Set Flutter environment for CI FIRST (updated for stable Ruby environment)
     ENV['FLUTTER_ROOT'] = '/Users/runner/hostedtoolcache/flutter/3.24.3/x64'
     ENV['PATH'] = "/opt/homebrew/bin:/usr/local/bin:#{ENV['FLUTTER_ROOT']}/bin:#{ENV['PATH']}"
     
@@ -262,7 +262,7 @@ platform :ios do
     # ALTERNATIVE METHOD: Manual Archive without problematic Build Phases
     UI.message("🔨 Using alternative build method - manual xcodebuild archive...")
     
-    # Set Flutter environment explicitly
+    # Set Flutter environment explicitly (stable Ruby 3.3.6 environment)  
     ENV['FLUTTER_ROOT'] = '/Users/runner/hostedtoolcache/flutter/3.24.3/x64'
     ENV['PATH'] = "#{ENV['FLUTTER_ROOT']}/bin:#{ENV['PATH']}"
     
