@@ -123,6 +123,15 @@ jobs:
         pod repo update
         pod install --verbose
     
+    - name: Setup Build Environment and Xcode Tools
+      run: |
+        # Ensure Xcode command line tools are available (required for native gem compilation)
+        xcode-select --install || echo "Command line tools already installed"
+        xcode-select -p
+        # Verify build tools are working
+        which gcc || echo "GCC not found"
+        which clang || echo "Clang not found"
+        
     - name: Setup Fastlane via Homebrew and build Flutter
       run: |
         # Remove any conflicting gem installations first
@@ -141,8 +150,8 @@ jobs:
         # Explicitly set CocoaPods path for Flutter to use Homebrew version
         sudo ln -sf /opt/homebrew/bin/pod /usr/local/bin/pod || sudo ln -sf /usr/local/bin/pod /usr/local/bin/pod
         which pod && pod --version
-        # Let Fastlane handle the complete Flutter build process
-        echo "Skipping flutter build ios - Fastlane will handle complete build"
+        # Let Fastlane handle the complete Flutter build process including Ruby 3.4.5 gem dependencies
+        echo "Skipping flutter build ios - Fastlane will handle complete build and bigdecimal installation"
     
     - name: Prepare Fastlane Environment
       env:

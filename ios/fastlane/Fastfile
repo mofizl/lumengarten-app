@@ -100,9 +100,38 @@ platform :ios do
     rescue => e
       UI.message("⚠️ CocoaPods not found or broken, fixing Ruby 3.4.5 gem dependencies...")
       
-      # Install missing standard library gems for Ruby 3.4.5 (ignore bigdecimal compilation failure)
-      sh("gem install minitest drb mutex_m base64 || true")
-      sh("gem install bigdecimal || echo 'bigdecimal compilation failed - may not be needed'")
+      # CRITICAL: Ruby 3.4.5 removed bigdecimal from standard library - now requires explicit installation
+      UI.message("🔧 Setting up native extension compilation environment...")
+      
+      # Ensure Xcode command line tools are available for native gem compilation
+      sh("xcode-select --install || echo 'Command line tools already installed'")
+      
+      # Install missing standard library gems for Ruby 3.4.5
+      sh("gem install minitest drb mutex_m base64")
+      
+      # Install bigdecimal with proper native compilation (required by ActiveSupport/CocoaPods)
+      UI.message("🔢 Installing bigdecimal native extension (required by CocoaPods)...")
+      begin
+        # Try architecture-specific installation for Apple Silicon
+        sh("arch -arm64 gem install bigdecimal")
+        UI.success("✅ bigdecimal installed with ARM64 architecture")
+      rescue => bigdecimal_error
+        UI.error("❌ ARM64 installation failed: #{bigdecimal_error}")
+        begin
+          # Fallback: Install with explicit compilation flags
+          sh("gem install bigdecimal -- --with-cflags='-Wno-error'")
+          UI.success("✅ bigdecimal installed with compilation flags")
+        rescue => final_error
+          UI.error("❌ All bigdecimal installation methods failed: #{final_error}")
+          UI.message("🔄 Trying Homebrew Ruby environment...")
+          
+          # Final fallback: Use system Ruby/Homebrew environment
+          ENV['PATH'] = "/usr/local/bin:/opt/homebrew/bin:#{ENV['PATH']}"
+          sh("brew install ruby")
+          sh("/opt/homebrew/bin/gem install bigdecimal")
+          UI.success("✅ bigdecimal installed via Homebrew Ruby")
+        end
+      end
       
       # Then install/reinstall CocoaPods
       sh("brew reinstall cocoapods")
