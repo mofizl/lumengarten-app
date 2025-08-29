@@ -112,7 +112,7 @@ platform :ios do
     
     # Fastlane now handles the complete Flutter build
     UI.message("🔨 Building Flutter iOS app via Fastlane...")
-    sh("cd .. && flutter build ios --release --no-codesign")
+    sh("flutter build ios --release --no-codesign")
     
     # Build signed IPA using Fastlane with extended timeout and CI optimizations
     UI.message("🔨 Starting Xcode archive build with CI optimizations...")

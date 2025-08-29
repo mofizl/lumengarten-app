@@ -31,10 +31,14 @@ jobs:
         cache: true
     
     - name: Get dependencies
-      run: flutter pub get
+      run: |
+        cd lumengarten_app
+        flutter pub get
     
     - name: Analyze code
-      run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      run: |
+        cd lumengarten_app
+        flutter analyze --no-fatal-infos --no-fatal-warnings
     
     - name: Run tests  
       run: echo "Tests temporarily disabled for TestFlight deployment"
@@ -60,10 +64,13 @@ jobs:
         java-version: '17'
     
     - name: Get dependencies
-      run: flutter pub get
+      run: |
+        cd lumengarten_app
+        flutter pub get
     
     - name: Create Android keystore
       run: |
+        cd lumengarten_app
         echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/keystore.jks
         echo "storeFile=keystore.jks" >> android/key.properties
         echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" >> android/key.properties
@@ -71,22 +78,26 @@ jobs:
         echo "keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}" >> android/key.properties
     
     - name: Build Android APK
-      run: flutter build apk --release
+      run: |
+        cd lumengarten_app
+        flutter build apk --release
     
     - name: Build Android AAB
-      run: flutter build appbundle --release
+      run: |
+        cd lumengarten_app
+        flutter build appbundle --release
     
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
         name: android-apk
-        path: build/app/outputs/flutter-apk/app-release.apk
+        path: lumengarten_app/build/app/outputs/flutter-apk/app-release.apk
     
     - name: Upload AAB artifact
       uses: actions/upload-artifact@v4
       with:
         name: android-aab
-        path: build/app/outputs/bundle/release/app-release.aab
+        path: lumengarten_app/build/app/outputs/bundle/release/app-release.aab
 
   # iOS TestFlight Deployment with Fastlane (Extended timeout for macOS runner issues)
   testflight:
@@ -104,6 +115,7 @@ jobs:
     
     - name: Get dependencies and configure iOS SDK
       run: |
+        cd lumengarten_app
         # CRITICAL: Enable iOS support in Flutter configuration first
         flutter config --enable-ios
         flutter config --list | grep enable-ios
@@ -199,7 +211,7 @@ jobs:
     - name: Setup CocoaPods with iOS Environment (After Clean Gem Installation)
       run: |
         echo "🔧 Setting up CocoaPods with iOS environment ONLY AFTER clean gem compilation..."
-        cd ios
+        cd lumengarten_app/ios
         
         # Verify we're using the correct Ruby installation
         which ruby
@@ -242,7 +254,7 @@ jobs:
         APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
         APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
       run: |
-        cd ios
+        cd lumengarten_app/ios
         
         # Create certificate and profile files from secrets
         echo -n "$IOS_CERTIFICATE_BASE64" | base64 -D > certificate.p12
@@ -259,6 +271,7 @@ jobs:
     
     - name: Set Flutter Environment Variables
       run: |
+        cd lumengarten_app
         echo "FLUTTER_ROOT=$FLUTTER_HOME" >> $GITHUB_ENV
         echo "FLUTTER_BUILD_DIR=$(pwd)/build" >> $GITHUB_ENV
     
@@ -276,7 +289,7 @@ jobs:
         FLUTTER_ROOT: ${{ env.FLUTTER_ROOT }}
         FLUTTER_BUILD_DIR: ${{ env.FLUTTER_BUILD_DIR }}
       run: |
-        cd ios
+        cd lumengarten_app/ios
         echo "🚀 Starting Fastlane with Multi-Strategy Approach..."
         
         # Use direct Fastlane execution (Bundle completely eliminated)
@@ -298,5 +311,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: testflight-ipa
-        path: ios/fastlane/builds/Lumengarten.ipa
+        path: lumengarten_app/ios/fastlane/builds/Lumengarten.ipa
         if-no-files-found: warn
