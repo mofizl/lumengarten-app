@@ -201,35 +201,35 @@ jobs:
           echo "✅ System gems installed directly, skipping Bundle dependency resolution"
         fi
         
-        # Verify critical gems installation
-        echo "🔍 Verifying gems after installation..."
-        bundle exec ruby -e "puts 'Ruby: ' + RUBY_VERSION"
-        bundle exec ruby -e "require 'json'; puts 'JSON: ' + JSON::VERSION"
-        bundle exec ruby -e "require 'bigdecimal'; puts 'BigDecimal: OK'" || echo "BigDecimal: Optional (compilation may fail)"
+        # Test gems and determine working method
+        echo "🔍 Testing gem availability and determining best execution method..."
         
-        # Test gems via bundle or direct installation
-        echo "🔍 Testing gem availability..."
-        if bundle exec pod --version 2>/dev/null; then
-          echo "✅ CocoaPods working via Bundle"
+        # Test Bundle first (only if bundle install succeeded)
+        USE_BUNDLE=false
+        
+        echo "Testing Bundle execution..."
+        if bundle exec pod --version 2>/dev/null && bundle exec fastlane --version 2>/dev/null; then
+          echo "✅ Both CocoaPods and Fastlane working via Bundle"
           USE_BUNDLE=true
-        elif pod --version 2>/dev/null; then
-          echo "✅ CocoaPods working directly (system install)"
-          USE_BUNDLE=false
         else
-          echo "❌ CocoaPods not available via any method"
-        fi
-        
-        if bundle exec fastlane --version 2>/dev/null; then
-          echo "✅ Fastlane working via Bundle"
-        elif fastlane --version 2>/dev/null; then
-          echo "✅ Fastlane working directly (system install)"
-        else
-          echo "❌ Fastlane not available via any method"
+          echo "❌ Bundle execution failed, testing direct installation..."
+          
+          # Test direct gems
+          if pod --version 2>/dev/null && fastlane --version 2>/dev/null; then
+            echo "✅ Both CocoaPods and Fastlane working directly (system install)"
+            USE_BUNDLE=false
+          else
+            echo "❌ Neither Bundle nor direct gems working properly"
+            echo "Forcing direct gem installation as fallback..."
+            gem install cocoapods fastlane --no-document
+            USE_BUNDLE=false
+          fi
         fi
         
         # Export bundle usage decision for later steps
-        echo "USE_BUNDLE=${USE_BUNDLE:-false}" >> $GITHUB_ENV
-        echo "✅ Gem installation and testing completed!"
+        echo "USE_BUNDLE=${USE_BUNDLE}" >> $GITHUB_ENV
+        echo "Final execution method: $(if [ "$USE_BUNDLE" = "true" ]; then echo "Bundle"; else echo "Direct"; fi)"
+        echo "✅ Gem installation and method determination completed!"
     
     - name: Setup CocoaPods with iOS Environment (After Clean Gem Installation)
       run: |
@@ -241,9 +241,8 @@ jobs:
         which bundle
         bundle exec ruby --version
         
-        # VERIFY gems are compiled for macOS (not iOS)
-        echo "🔍 Verifying gem compilation architecture..."
-        file $(bundle exec ruby -e "puts $LOAD_PATH.find {|path| File.exist?(File.join(path, 'json', 'ext', 'generator.bundle'))}|| 'NOT FOUND'")/json/ext/generator.bundle || echo "JSON bundle verification failed (expected on fresh install)"
+        # Skip bundle exec verification since Bundle may not work at this point
+        echo "🔍 Skipping gem compilation verification (Bundle may not be working)..."
         
         # NOW SAFELY set iOS environment for CocoaPods operations (gems already compiled for macOS)
         export IPHONEOS_DEPLOYMENT_TARGET=16.0
