@@ -123,27 +123,56 @@ jobs:
         pod repo update
         pod install --verbose
     
-    - name: Setup Ruby Environment with Bundler (Ultimate Fix)
+    - name: Setup Ruby Environment (Without Auto-Bundle)
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: 3.4.5
-        bundler-cache: true  # Automatically runs bundle install and caches gems
+        bundler-cache: false  # Manual bundle install after compiler fixes
         working-directory: .
     
-    - name: Configure Development Tools for Native Gem Compilation
+    - name: Fix Ruby Compiler Environment (CRITICAL - iOS/macOS Sysroot Issue)
       run: |
-        # CRITICAL: Ensure Command Line Tools are properly selected for macOS-14
-        echo "🔧 Configuring development tools for Ruby native gem compilation..."
+        # CRITICAL FIX: Ruby is trying to compile for iOS instead of macOS
+        echo "🔧 Fixing Ruby compiler environment - iOS/macOS sysroot conflict..."
+        
+        # Force Command Line Tools selection
         sudo xcode-select -s /Library/Developer/CommandLineTools
         xcode-select -p
         
-        # Verify compilers are available
-        which gcc && gcc --version
-        which make && make --version
+        # CRITICAL: Clear iOS-related environment variables that confuse the compiler
+        unset IPHONEOS_DEPLOYMENT_TARGET
+        unset TARGETED_DEVICE_FAMILY
+        unset ARCHS
         
-        # Set compilation environment for native extensions (bigdecimal, etc.)
+        # Force macOS compilation environment
+        export MACOSX_DEPLOYMENT_TARGET="13.0"
+        export SDKROOT="$(xcrun --show-sdk-path)"
+        export CFLAGS="-arch arm64"
+        export CXXFLAGS="-arch arm64"
+        export LDFLAGS="-arch arm64 -L$(brew --prefix)/lib"
+        export CPPFLAGS="-I$(brew --prefix)/include"
+        
+        # Set GitHub environment variables
+        echo "MACOSX_DEPLOYMENT_TARGET=13.0" >> $GITHUB_ENV
+        echo "SDKROOT=$(xcrun --show-sdk-path)" >> $GITHUB_ENV
+        echo "CFLAGS=-arch arm64" >> $GITHUB_ENV
+        echo "CXXFLAGS=-arch arm64" >> $GITHUB_ENV
+        echo "LDFLAGS=-arch arm64 -L$(brew --prefix)/lib" >> $GITHUB_ENV
         echo "CPPFLAGS=-I$(brew --prefix)/include" >> $GITHUB_ENV
-        echo "LDFLAGS=-L$(brew --prefix)/lib" >> $GITHUB_ENV
+        
+        # Verify compiler targets macOS not iOS
+        echo "🔍 Verifying compiler environment:"
+        xcrun --show-sdk-path
+        clang -arch arm64 -v 2>&1 | head -5
+    
+    - name: Install Gems with Fixed Compiler Environment
+      run: |
+        echo "🚀 Installing Ruby gems with corrected compiler environment..."
+        # Clear any existing failed bundle state
+        rm -f Gemfile.lock
+        # Install with proper macOS compilation environment
+        bundle install --jobs 4 --retry 3
+        echo "✅ Gem installation completed successfully!"
     
     - name: Prepare Fastlane Environment
       env:
