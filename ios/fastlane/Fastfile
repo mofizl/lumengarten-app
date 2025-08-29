@@ -98,10 +98,10 @@ platform :ios do
       sh("pod --version")
       UI.success("✅ CocoaPods found and working!")
     rescue => e
-      UI.message("⚠️ CocoaPods not found or broken, fixing gem dependencies...")
+      UI.message("⚠️ CocoaPods not found or broken, fixing Ruby 3.4.5 gem dependencies...")
       
-      # Install missing gem dependencies first
-      sh("gem install minitest")
+      # Install missing standard library gems for Ruby 3.4.5
+      sh("gem install minitest drb mutex_m base64 bigdecimal")
       
       # Then install/reinstall CocoaPods
       sh("brew reinstall cocoapods")
