@@ -123,60 +123,27 @@ jobs:
         pod repo update
         pod install --verbose
     
-    - name: Fix macOS-14 Development Tools and Ruby Environment (2024 Critical Fix)
+    - name: Setup Ruby Environment with Bundler (Ultimate Fix)
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.4.5
+        bundler-cache: true  # Automatically runs bundle install and caches gems
+        working-directory: .
+    
+    - name: Configure Development Tools for Native Gem Compilation
       run: |
-        # CRITICAL FIX: macOS-14 GitHub Actions Runner Issues
-        echo "🔧 Applying macOS-14 GitHub Actions fixes for Ruby/Xcode compatibility..."
-        
-        # Force explicit Command Line Tools selection (required for macOS-14 runners)
-        sudo xcode-select --reset
+        # CRITICAL: Ensure Command Line Tools are properly selected for macOS-14
+        echo "🔧 Configuring development tools for Ruby native gem compilation..."
         sudo xcode-select -s /Library/Developer/CommandLineTools
         xcode-select -p
         
-        # Verify development tools are properly configured
-        echo "🔍 Verifying development tools..."
+        # Verify compilers are available
         which gcc && gcc --version
-        which clang && clang --version
         which make && make --version
         
-        # Install/reinstall Command Line Tools if needed (2024 macOS-14 fix)
-        if ! gcc --version > /dev/null 2>&1; then
-          echo "🚨 Installing Command Line Tools..."
-          # Accept license and install tools non-interactively
-          sudo xcode-select --install 2>/dev/null || true
-          sleep 30  # Allow installation to start
-          # Accept Xcode license non-interactively
-          sudo xcodebuild -license accept 2>/dev/null || true
-          # Final verification
-          sudo xcode-select -s /Library/Developer/CommandLineTools
-          which gcc && gcc --version
-        fi
-        
-        # Remove conflicting Ruby/Gem installations completely (Clean slate)
-        echo "🧹 Cleaning conflicting Ruby environments..."
-        sudo gem uninstall cocoapods -aIx 2>/dev/null || true
-        sudo gem uninstall fastlane -aIx 2>/dev/null || true
-        sudo rm -f /usr/local/bin/pod /usr/local/bin/fastlane
-        
-        # Set consistent environment for Ruby gem compilation
-        echo "🔧 Setting Ruby compilation environment..."
-        export CPPFLAGS="-I$(brew --prefix)/include"
-        export LDFLAGS="-L$(brew --prefix)/lib"
+        # Set compilation environment for native extensions (bigdecimal, etc.)
         echo "CPPFLAGS=-I$(brew --prefix)/include" >> $GITHUB_ENV
         echo "LDFLAGS=-L$(brew --prefix)/lib" >> $GITHUB_ENV
-        
-    - name: Install Fastlane via Homebrew (Comprehensive Solution)
-      run: |
-        # Install Fastlane via Homebrew (let Fastlane handle CocoaPods and Ruby gems)
-        echo "🚀 Installing Fastlane - Ruby environment fixes now handled in Fastfile..."
-        brew install --force --overwrite fastlane
-        brew link --overwrite fastlane
-        
-        # Ensure Homebrew binaries are in PATH for Flutter
-        echo "/opt/homebrew/bin:/usr/local/bin" >> $GITHUB_PATH
-        
-        # Let Fastlane handle the complete Ruby environment, CocoaPods, and bigdecimal installation
-        echo "✅ Fastlane installed - comprehensive Ruby/CocoaPods fixes delegated to Fastfile"
     
     - name: Prepare Fastlane Environment
       env:
@@ -207,7 +174,7 @@ jobs:
         echo "FLUTTER_ROOT=$FLUTTER_HOME" >> $GITHUB_ENV
         echo "FLUTTER_BUILD_DIR=$(pwd)/build" >> $GITHUB_ENV
     
-    - name: Build and Deploy with Fastlane (Extended Timeout)
+    - name: Build and Deploy with Fastlane via Bundle (Extended Timeout)
       timeout-minutes: 75
       env:
         IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
@@ -222,8 +189,8 @@ jobs:
         FLUTTER_BUILD_DIR: ${{ env.FLUTTER_BUILD_DIR }}
       run: |
         cd ios
-        echo "Starting Fastlane with extended timeout due to macOS runner performance issues..."
-        fastlane testflight
+        echo "🚀 Starting Bundle-managed Fastlane (clean Ruby environment)..."
+        bundle exec fastlane testflight
     
     - name: Upload IPA Artifact
       uses: actions/upload-artifact@v4
