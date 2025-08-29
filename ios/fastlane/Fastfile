@@ -101,9 +101,14 @@ platform :ios do
       UI.message("⚠️ CocoaPods not found or broken, installing via Homebrew...")
       sh("brew install cocoapods")
       sh("brew link --overwrite cocoapods")
-      # Force symlink to ensure it's in PATH
-      sh("sudo ln -sf /opt/homebrew/bin/pod /usr/local/bin/pod || sudo ln -sf /usr/local/bin/pod /usr/local/bin/pod")
-      sh("pod --version")
+      
+      # Find the actual pod binary location
+      UI.message("🔍 Finding pod binary location...")
+      sh("find /usr/local -name 'pod' -type f 2>/dev/null || find /opt/homebrew -name 'pod' -type f 2>/dev/null")
+      
+      # Update PATH to include Homebrew bin directories
+      ENV['PATH'] = "/usr/local/bin:/opt/homebrew/bin:#{ENV['PATH']}"
+      sh("export PATH=/usr/local/bin:/opt/homebrew/bin:$PATH && pod --version")
       UI.success("✅ CocoaPods installed and working!")
     end
     
