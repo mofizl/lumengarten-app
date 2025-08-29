@@ -150,32 +150,54 @@ jobs:
         # Clean macOS environment for Ruby setup
         MACOSX_DEPLOYMENT_TARGET: "13.0"
     
-    - name: Manual Bundle Install with Conflict Resolution
+    - name: Force Clean Bundle Install with Latest Dependencies
       run: |
-        echo "🔧 Installing gems manually with conflict resolution..."
+        echo "🔧 Force installing latest gems with clean dependency resolution..."
         
         # Verify Ruby installation is isolated
         which ruby
         ruby --version
         which bundle
         
-        # Clear any existing bundle state
+        # Complete bundle state reset
         rm -f Gemfile.lock
+        rm -rf .bundle
+        bundle config --delete local
         
-        # Install gems with explicit conflict resolution
-        bundle install --jobs 4 --retry 3
+        # Force update bundler to latest
+        gem update bundler
+        
+        # Install gems with latest dependencies and conflict resolution
+        bundle install --jobs 4 --retry 3 --full-index
+        
+        # If bundle install fails due to JSON conflicts, try manual resolution
+        if [ $? -ne 0 ]; then
+          echo "🔄 Bundle install failed, trying manual JSON resolution..."
+          
+          # Check available JSON versions
+          gem list json -r
+          
+          # Try installing a specific JSON version that's available
+          gem install json -v "~> 2.9"
+          
+          # Retry bundle install
+          bundle install --jobs 4 --retry 3
+        fi
         
         # Verify critical gems installation
-        echo "🔍 Verifying gems after manual installation..."
+        echo "🔍 Verifying gems after installation..."
         bundle exec ruby -e "puts 'Ruby: ' + RUBY_VERSION"
         bundle exec ruby -e "require 'json'; puts 'JSON: ' + JSON::VERSION"
         bundle exec ruby -e "require 'bigdecimal'; puts 'BigDecimal: OK'" || echo "BigDecimal: Optional (compilation may fail)"
-        bundle exec pod --version
-        echo "✅ Manual gem installation completed!"
+        
+        # Test pod command specifically
+        echo "🔍 Testing CocoaPods command..."
+        bundle exec pod --version || echo "❌ CocoaPods failed - will retry with alternative approach"
+        echo "✅ Clean gem installation completed!"
     
-    - name: Setup CocoaPods with Isolated Environment
+    - name: Setup CocoaPods with Dependency Resolution
       run: |
-        echo "🔧 Setting up CocoaPods with isolated environment..."
+        echo "🔧 Setting up CocoaPods with comprehensive dependency resolution..."
         cd ios
         
         # Verify we're using the correct Ruby/Bundle
@@ -187,15 +209,29 @@ jobs:
         export IPHONEOS_DEPLOYMENT_TARGET=16.0
         echo "IPHONEOS_DEPLOYMENT_TARGET=16.0" >> $GITHUB_ENV
         
-        # Clean CocoaPods setup with isolated environment
-        bundle exec pod cache clean --all
+        # Test CocoaPods command before proceeding
+        echo "🔍 Testing CocoaPods availability..."
+        if ! bundle exec pod --version; then
+          echo "🔄 CocoaPods not working via bundle, trying direct gem installation..."
+          
+          # Install CocoaPods directly if bundle exec fails
+          gem install cocoapods
+          
+          # Test direct pod command
+          pod --version
+        fi
+        
+        # Clean CocoaPods setup
+        echo "🧹 Cleaning CocoaPods environment..."
+        pod cache clean --all || bundle exec pod cache clean --all
         rm -rf Pods
         rm -f Podfile.lock
         
-        # Update repo and install with isolated Bundle
-        bundle exec pod repo update
-        bundle exec pod install --verbose
-        echo "✅ CocoaPods setup completed with isolated Ruby environment"
+        # Update repo and install
+        echo "📦 Installing CocoaPods dependencies..."
+        pod repo update || bundle exec pod repo update
+        pod install --verbose || bundle exec pod install --verbose
+        echo "✅ CocoaPods setup completed successfully"
     
     - name: Prepare Fastlane Environment
       env:
