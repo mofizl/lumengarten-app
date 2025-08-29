@@ -98,17 +98,18 @@ platform :ios do
       sh("pod --version")
       UI.success("✅ CocoaPods found and working!")
     rescue => e
-      UI.message("⚠️ CocoaPods not found or broken, installing via Homebrew...")
-      sh("brew install cocoapods")
-      sh("brew link --overwrite cocoapods")
+      UI.message("⚠️ CocoaPods not found or broken, fixing gem dependencies...")
       
-      # Find the actual pod binary location
-      UI.message("🔍 Finding pod binary location...")
-      sh("find /usr/local -name 'pod' -type f 2>/dev/null || find /opt/homebrew -name 'pod' -type f 2>/dev/null")
+      # Install missing gem dependencies first
+      sh("gem install minitest")
+      
+      # Then install/reinstall CocoaPods
+      sh("brew reinstall cocoapods")
+      sh("brew link --overwrite cocoapods")
       
       # Update PATH to include Homebrew bin directories
       ENV['PATH'] = "/usr/local/bin:/opt/homebrew/bin:#{ENV['PATH']}"
-      sh("export PATH=/usr/local/bin:/opt/homebrew/bin:$PATH && pod --version")
+      sh("pod --version")
       UI.success("✅ CocoaPods installed and working!")
     end
     
