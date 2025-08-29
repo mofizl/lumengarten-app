@@ -110,14 +110,20 @@ jobs:
         xcodebuild -showsdks | grep iOS
         # NOTE: IPHONEOS_DEPLOYMENT_TARGET will be set AFTER gem installation
     
-    - name: Complete Ruby Environment Reset
+    - name: Complete Environment Reset for MacOS Gem Compilation
       run: |
-        echo "🔧 COMPLETE RESET: Isolating Ruby environment for clean gem compilation..."
+        echo "🔧 CRITICAL: Complete environment reset for macOS-only gem compilation..."
         
-        # Remove any existing Ruby paths from PATH to prevent conflicts
-        export PATH="/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin"
+        # CRITICAL: Clear ALL iOS-related environment variables that contaminate gem compilation
+        unset IPHONEOS_DEPLOYMENT_TARGET
+        unset IOSDEPLOYMENT_TARGET
+        unset ARCHS
+        unset VALID_ARCHS
+        unset TARGETED_DEVICE_FAMILY
+        unset CODE_SIGN_IDENTITY
+        unset PROVISIONING_PROFILE
         
-        # Clear all Ruby-related environment variables
+        # Clear Ruby environment variables
         unset GEM_HOME
         unset GEM_PATH 
         unset BUNDLE_PATH
@@ -126,19 +132,28 @@ jobs:
         unset RUBY_ENGINE
         unset RUBY_VERSION
         
-        # Set clean macOS environment for gem compilation
+        # Remove any existing Ruby paths from PATH to prevent conflicts
+        export PATH="/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin"
+        
+        # Force macOS-only environment for gem compilation
         export MACOSX_DEPLOYMENT_TARGET="13.0"
-        export SDKROOT="$(xcrun --show-sdk-path)"
+        export SDKROOT="$(xcrun --show-sdk-path --sdk macosx)"
         
         # Force Command Line Tools for consistent compilation
         sudo xcode-select -s /Library/Developer/CommandLineTools
         xcode-select -p
         
-        # Save clean environment to GitHub
+        # Save ONLY macOS environment to GitHub (NO iOS variables!)
         echo "MACOSX_DEPLOYMENT_TARGET=13.0" >> $GITHUB_ENV
-        echo "SDKROOT=$(xcrun --show-sdk-path)" >> $GITHUB_ENV
+        echo "SDKROOT=$(xcrun --show-sdk-path --sdk macosx)" >> $GITHUB_ENV
         
-        echo "✅ Ruby environment completely reset for clean compilation"
+        # Verify environment is macOS-only
+        echo "🔍 Environment verification:"
+        echo "MACOSX_DEPLOYMENT_TARGET: $MACOSX_DEPLOYMENT_TARGET"
+        echo "SDKROOT: $SDKROOT"
+        echo "IPHONEOS_DEPLOYMENT_TARGET: ${IPHONEOS_DEPLOYMENT_TARGET:-'UNSET (GOOD)'}"
+        
+        echo "✅ Environment completely reset for macOS-only gem compilation"
     
     - name: Setup Ruby Environment with Stable Version
       uses: ruby/setup-ruby@v1
@@ -200,19 +215,28 @@ jobs:
         bundle exec pod --version || echo "❌ CocoaPods failed - will retry with alternative approach"
         echo "✅ Clean gem installation completed!"
     
-    - name: Setup CocoaPods with Dependency Resolution
+    - name: Setup CocoaPods with iOS Environment (After Clean Gem Installation)
       run: |
-        echo "🔧 Setting up CocoaPods with comprehensive dependency resolution..."
+        echo "🔧 Setting up CocoaPods with iOS environment ONLY AFTER clean gem compilation..."
         cd ios
         
-        # Verify we're using the correct Ruby/Bundle
+        # Verify we're using the correct Ruby/Bundle with clean gems
         which ruby
         which bundle
         bundle exec ruby --version
         
-        # NOW set iOS environment for CocoaPods (after gems are compiled)
+        # VERIFY gems are compiled for macOS (not iOS)
+        echo "🔍 Verifying gem compilation architecture..."
+        file $(bundle exec ruby -e "puts $LOAD_PATH.find {|path| File.exist?(File.join(path, 'json', 'ext', 'generator.bundle'))}|| 'NOT FOUND'")/json/ext/generator.bundle || echo "JSON bundle verification failed (expected on fresh install)"
+        
+        # NOW SAFELY set iOS environment for CocoaPods operations (gems already compiled for macOS)
         export IPHONEOS_DEPLOYMENT_TARGET=16.0
         echo "IPHONEOS_DEPLOYMENT_TARGET=16.0" >> $GITHUB_ENV
+        
+        echo "🔍 Environment after iOS setup:"
+        echo "MACOSX_DEPLOYMENT_TARGET: ${MACOSX_DEPLOYMENT_TARGET}"
+        echo "IPHONEOS_DEPLOYMENT_TARGET: ${IPHONEOS_DEPLOYMENT_TARGET}"
+        echo "SDKROOT: ${SDKROOT}"
         
         # Test CocoaPods command before proceeding
         echo "🔍 Testing CocoaPods availability..."
