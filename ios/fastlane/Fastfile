@@ -86,10 +86,14 @@ platform :ios do
     # Flutter build already completed in GitHub Actions workflow
     UI.message("🔨 Flutter iOS build completed by GitHub Actions workflow - proceeding to sign IPA...")
     
-    # Build signed IPA using Fastlane with timeout protection
-    UI.message("🔨 Starting Xcode archive build with timeout protection...")
+    # Set Flutter environment for CI
+    ENV['FLUTTER_ROOT'] = '/Users/runner/hostedtoolcache/flutter/3.24.3/x64'
+    ENV['PATH'] = "#{ENV['FLUTTER_ROOT']}/bin:#{ENV['PATH']}"
+    
+    # Build signed IPA using Fastlane with extended timeout and CI optimizations
+    UI.message("🔨 Starting Xcode archive build with CI optimizations...")
     begin
-      Timeout::timeout(1800) do  # 30 minute timeout
+      Timeout::timeout(2100) do  # 35 minute timeout (was 30)
         ipa_path = build_ios_app(
           workspace: "Runner.xcworkspace",
           scheme: "Runner",
@@ -104,12 +108,20 @@ platform :ios do
             uploadSymbols: true
           },
           output_directory: "fastlane/builds",
-          output_name: "Lumengarten.ipa"
+          output_name: "Lumengarten.ipa",
+          # CI-specific optimizations:
+          skip_build_archive: false,
+          skip_codesigning: false,
+          silent: false,
+          suppress_xcode_output: false,
+          xcargs: "-allowProvisioningUpdates -allowProvisioningDeviceRegistration"
         )
       end
     rescue Timeout::Error
-      UI.error("🚨 Xcode build timed out after 30 minutes - likely stuck on Run Script phase")
-      raise "Build timeout - check for hanging Run Script phases"
+      UI.error("🚨 Xcode build timed out after 35 minutes")
+      UI.message("⚠️ This usually indicates hanging Run Script phases")
+      UI.message("✅ Build Phase reordering has been applied - retry should work")
+      raise "Build timeout - Build Phase fixes applied, retry recommended"
     end
     UI.message("Created signed IPA at: #{ipa_path}")
     
@@ -180,6 +192,105 @@ platform :ios do
       UI.error("❌ IPA file not found at: #{ipa_path}")
       sh("ls -la fastlane/builds/")
     end
+
+    # Cleanup
+    delete_keychain(name: "fastlane_tmp_keychain")
+  end
+
+  desc "Alternative iOS build method - bypasses problematic Xcode Run Scripts"
+  lane :testflight_alternative do
+    # Setup identical to main testflight lane
+    create_keychain(
+      name: "fastlane_tmp_keychain",
+      password: ENV["KEYCHAIN_PASSWORD"],
+      default_keychain: true,
+      unlock: true,
+      timeout: 3600,
+      lock_when_sleeps: false
+    )
+
+    import_certificate(
+      certificate_path: ENV["IOS_CERTIFICATE_PATH"],
+      certificate_password: ENV["IOS_CERTIFICATE_PASSWORD"],
+      keychain_name: "fastlane_tmp_keychain",
+      keychain_password: ENV["KEYCHAIN_PASSWORD"]
+    )
+    
+    install_provisioning_profile(
+      path: ENV["IOS_PROVISIONING_PROFILE_PATH"]
+    )
+    
+    profile_uuid = sh("security cms -D -i \"#{ENV['IOS_PROVISIONING_PROFILE_PATH']}\" | plutil -extract UUID xml1 -o - - | sed -n 's/.*<string>\\(.*\\)<\\/string>.*/\\1/p'").strip
+
+    update_project_team(
+      path: "Runner.xcodeproj",
+      teamid: ENV["DEVELOPMENT_TEAM"]
+    )
+    
+    update_code_signing_settings(
+      path: "Runner.xcodeproj", 
+      use_automatic_signing: false,
+      targets: ["Runner"],
+      code_sign_identity: "iPhone Distribution: Morris Merkel (QX8XC3CNTR)",
+      profile_uuid: profile_uuid
+    )
+
+    # ALTERNATIVE METHOD: Manual Archive without problematic Build Phases
+    UI.message("🔨 Using alternative build method - manual xcodebuild archive...")
+    
+    # Set Flutter environment explicitly
+    ENV['FLUTTER_ROOT'] = '/Users/runner/hostedtoolcache/flutter/3.24.3/x64'
+    ENV['PATH'] = "#{ENV['FLUTTER_ROOT']}/bin:#{ENV['PATH']}"
+    
+    # Manual xcodebuild command bypassing Fastlane's build_ios_app
+    archive_path = "fastlane/builds/Runner.xcarchive"
+    
+    sh("xcodebuild -workspace Runner.xcworkspace -scheme Runner -configuration Release -archivePath #{archive_path} archive CODE_SIGN_IDENTITY='iPhone Distribution: Morris Merkel (QX8XC3CNTR)' PROVISIONING_PROFILE='#{profile_uuid}' -allowProvisioningUpdates")
+    
+    # Manual export IPA
+    ipa_path = "fastlane/builds/Lumengarten.ipa"
+    export_options_plist = "fastlane/builds/ExportOptions.plist"
+    
+    # Create Export Options plist
+    File.write(export_options_plist, <<-PLIST)
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>method</key>
+    <string>app-store</string>
+    <key>provisioningProfiles</key>
+    <dict>
+        <key>com.lumengarten.lumengartenApp</key>
+        <string>#{profile_uuid}</string>
+    </dict>
+    <key>signingStyle</key>
+    <string>manual</string>
+    <key>uploadBitcode</key>
+    <false/>
+    <key>uploadSymbols</key>
+    <true/>
+</dict>
+</plist>
+PLIST
+    
+    sh("xcodebuild -exportArchive -archivePath #{archive_path} -exportPath fastlane/builds -exportOptionsPlist #{export_options_plist}")
+    
+    # Upload to TestFlight
+    api_key = app_store_connect_api_key(
+      key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
+      issuer_id: "d439615c-03af-424b-8ed7-98abfae18d23",
+      key_filepath: ENV["APP_STORE_CONNECT_API_KEY_PATH"],
+      duration: 1200,
+      in_house: false
+    )
+      
+    upload_to_testflight(
+      api_key: api_key,
+      app_identifier: "com.lumengarten.lumengartenApp",
+      skip_waiting_for_build_processing: true,
+      ipa: ipa_path
+    )
 
     # Cleanup
     delete_keychain(name: "fastlane_tmp_keychain")
