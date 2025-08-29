@@ -85,7 +85,16 @@ platform :ios do
 
     # Set Flutter environment for CI FIRST
     ENV['FLUTTER_ROOT'] = '/Users/runner/hostedtoolcache/flutter/3.24.3/x64'
-    ENV['PATH'] = "#{ENV['FLUTTER_ROOT']}/bin:#{ENV['PATH']}"
+    ENV['PATH'] = "/opt/homebrew/bin:/usr/local/bin:#{ENV['FLUTTER_ROOT']}/bin:#{ENV['PATH']}"
+    
+    # Ensure CocoaPods uses correct Ruby version (from research)
+    ENV['LANG'] = 'en_US.UTF-8'
+    ENV['LC_ALL'] = 'en_US.UTF-8'
+    
+    # Debug CocoaPods setup
+    UI.message("🔍 Debugging CocoaPods setup...")
+    sh("which pod && pod --version")
+    sh("which ruby && ruby --version")
     
     # Fastlane now handles the complete Flutter build
     UI.message("🔨 Building Flutter iOS app via Fastlane...")
