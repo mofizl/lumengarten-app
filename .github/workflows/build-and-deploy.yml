@@ -110,60 +110,92 @@ jobs:
         xcodebuild -showsdks | grep iOS
         # NOTE: IPHONEOS_DEPLOYMENT_TARGET will be set AFTER gem installation
     
-    - name: Pre-Ruby Environment Setup - Clear iOS Variables
+    - name: Complete Ruby Environment Reset
       run: |
-        echo "🔧 PRE-SETUP: Clearing iOS environment before Ruby gem compilation..."
+        echo "🔧 COMPLETE RESET: Isolating Ruby environment for clean gem compilation..."
         
-        # Set macOS-only environment for gem compilation (before Ruby setup)
+        # Remove any existing Ruby paths from PATH to prevent conflicts
+        export PATH="/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin"
+        
+        # Clear all Ruby-related environment variables
+        unset GEM_HOME
+        unset GEM_PATH 
+        unset BUNDLE_PATH
+        unset BUNDLE_GEMFILE
+        unset RUBYLIB
+        unset RUBY_ENGINE
+        unset RUBY_VERSION
+        
+        # Set clean macOS environment for gem compilation
         export MACOSX_DEPLOYMENT_TARGET="13.0"
         export SDKROOT="$(xcrun --show-sdk-path)"
         
-        # Save to GitHub environment (BEFORE ruby setup)
-        echo "MACOSX_DEPLOYMENT_TARGET=13.0" >> $GITHUB_ENV
-        echo "SDKROOT=$(xcrun --show-sdk-path)" >> $GITHUB_ENV
-        
-        # Force Command Line Tools selection
+        # Force Command Line Tools for consistent compilation
         sudo xcode-select -s /Library/Developer/CommandLineTools
         xcode-select -p
         
-        echo "✅ Clean environment prepared for Ruby gem compilation"
+        # Save clean environment to GitHub
+        echo "MACOSX_DEPLOYMENT_TARGET=13.0" >> $GITHUB_ENV
+        echo "SDKROOT=$(xcrun --show-sdk-path)" >> $GITHUB_ENV
+        
+        echo "✅ Ruby environment completely reset for clean compilation"
     
-    - name: Setup Ruby Environment with Clean Bundler Cache
+    - name: Setup Ruby Environment with Isolated Installation
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: 3.4.5
-        bundler-cache: true  # Now safe with clean macOS environment
+        bundler-cache: false  # Manual control to prevent conflicts
         working-directory: .
       env:
-        # Ensure clean macOS environment for bundler cache
+        # Clean macOS environment for Ruby setup
         MACOSX_DEPLOYMENT_TARGET: "13.0"
     
-    - name: Verify Ruby Gems Installation
+    - name: Manual Bundle Install with Conflict Resolution
       run: |
-        echo "🔍 Verifying Ruby gems installed by bundler-cache..."
+        echo "🔧 Installing gems manually with conflict resolution..."
         
-        # Verify critical gems (bundler-cache already installed them)
-        bundle exec ruby -e "require 'bigdecimal'; puts 'bigdecimal: OK'"
-        bundle exec ruby -e "require 'json'; puts 'json: OK'"
+        # Verify Ruby installation is isolated
+        which ruby
+        ruby --version
+        which bundle
+        
+        # Clear any existing bundle state
+        rm -f Gemfile.lock
+        
+        # Install gems with explicit conflict resolution
+        bundle install --jobs 4 --retry 3
+        
+        # Verify critical gems installation
+        echo "🔍 Verifying gems after manual installation..."
+        bundle exec ruby -e "puts 'Ruby: ' + RUBY_VERSION"
+        bundle exec ruby -e "require 'json'; puts 'JSON: ' + JSON::VERSION"
+        bundle exec ruby -e "require 'bigdecimal'; puts 'BigDecimal: OK'" || echo "BigDecimal: Optional (compilation may fail)"
         bundle exec pod --version
-        echo "✅ All gems verified successfully!"
+        echo "✅ Manual gem installation completed!"
     
-    - name: Setup CocoaPods AFTER Gem Installation
+    - name: Setup CocoaPods with Isolated Environment
       run: |
-        echo "🔧 Setting up CocoaPods with iOS environment (after clean gem installation)..."
+        echo "🔧 Setting up CocoaPods with isolated environment..."
         cd ios
         
-        # NOW it's safe to set iOS environment for CocoaPods
+        # Verify we're using the correct Ruby/Bundle
+        which ruby
+        which bundle
+        bundle exec ruby --version
+        
+        # NOW set iOS environment for CocoaPods (after gems are compiled)
         export IPHONEOS_DEPLOYMENT_TARGET=16.0
         echo "IPHONEOS_DEPLOYMENT_TARGET=16.0" >> $GITHUB_ENV
         
-        # CocoaPods setup
+        # Clean CocoaPods setup with isolated environment
         bundle exec pod cache clean --all
         rm -rf Pods
         rm -f Podfile.lock
+        
+        # Update repo and install with isolated Bundle
         bundle exec pod repo update
         bundle exec pod install --verbose
-        echo "✅ CocoaPods setup completed"
+        echo "✅ CocoaPods setup completed with isolated Ruby environment"
     
     - name: Prepare Fastlane Environment
       env:

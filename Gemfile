@@ -6,8 +6,8 @@ gem 'fastlane'
 # CocoaPods for iOS dependency management  
 gem 'cocoapods'
 
-# JSON with compatible version for CocoaPods
-gem 'json', '~> 2.6.3'
+# JSON with flexible version for CocoaPods compatibility
+gem 'json'
 
 # Ruby 3.4.5 standard library gems (removed from default gems)
 gem 'bigdecimal'
