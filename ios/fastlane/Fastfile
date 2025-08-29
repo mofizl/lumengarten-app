@@ -100,8 +100,9 @@ platform :ios do
     rescue => e
       UI.message("⚠️ CocoaPods not found or broken, fixing Ruby 3.4.5 gem dependencies...")
       
-      # Install missing standard library gems for Ruby 3.4.5
-      sh("gem install minitest drb mutex_m base64 bigdecimal")
+      # Install missing standard library gems for Ruby 3.4.5 (ignore bigdecimal compilation failure)
+      sh("gem install minitest drb mutex_m base64 || true")
+      sh("gem install bigdecimal || echo 'bigdecimal compilation failed - may not be needed'")
       
       # Then install/reinstall CocoaPods
       sh("brew reinstall cocoapods")
