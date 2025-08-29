@@ -83,12 +83,13 @@ platform :ios do
       profile_uuid: profile_uuid
     )
 
-    # Flutter build already completed in GitHub Actions workflow
-    UI.message("🔨 Flutter iOS build completed by GitHub Actions workflow - proceeding to sign IPA...")
-    
-    # Set Flutter environment for CI
+    # Set Flutter environment for CI FIRST
     ENV['FLUTTER_ROOT'] = '/Users/runner/hostedtoolcache/flutter/3.24.3/x64'
     ENV['PATH'] = "#{ENV['FLUTTER_ROOT']}/bin:#{ENV['PATH']}"
+    
+    # Fastlane now handles the complete Flutter build
+    UI.message("🔨 Building Flutter iOS app via Fastlane...")
+    sh("cd .. && flutter build ios --release --no-codesign")
     
     # Build signed IPA using Fastlane with extended timeout and CI optimizations
     UI.message("🔨 Starting Xcode archive build with CI optimizations...")

@@ -138,8 +138,8 @@ jobs:
         brew link --overwrite fastlane
         # Ensure Homebrew binaries are in PATH for Flutter
         echo "/opt/homebrew/bin:/usr/local/bin" >> $GITHUB_PATH
-        # Build Flutter iOS BEFORE Fastlane
-        flutter build ios --release --no-codesign
+        # Let Fastlane handle the complete Flutter build process
+        echo "Skipping flutter build ios - Fastlane will handle complete build"
     
     - name: Prepare Fastlane Environment
       env:

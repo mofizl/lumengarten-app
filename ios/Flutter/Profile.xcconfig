@@ -1,8 +1,2 @@
 #include "Generated.xcconfig"
 #include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"
-
-// Explicit Flutter framework search paths for CI/CD compatibility
-FRAMEWORK_SEARCH_PATHS = $(inherited) $(PROJECT_DIR)/Flutter $(FLUTTER_BUILD_DIR)/ios/Framework $(PODS_CONFIGURATION_BUILD_DIR)
-
-// Explicit Flutter framework linking
-OTHER_LDFLAGS = $(inherited) -framework Flutter
