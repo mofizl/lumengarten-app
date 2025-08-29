@@ -246,7 +246,6 @@
 			);
 			name = "Run Script";
 			outputPaths = (
-				"${DERIVED_FILE_DIR}/Pods-Runner-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
