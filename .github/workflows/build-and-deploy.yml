@@ -123,78 +123,65 @@ jobs:
         pod repo update
         pod install --verbose
     
-    - name: Setup Ruby Environment (Without Auto-Bundle)
-      uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: 3.4.5
-        bundler-cache: false  # Manual bundle install after compiler fixes
-        working-directory: .
-    
-    - name: Fix Ruby Compiler Environment (CRITICAL - iOS/macOS Sysroot Issue)
+    - name: Setup System Ruby Environment (Bypass iOS-Compiled Ruby)
       run: |
-        # CRITICAL FIX: Ruby is trying to compile for iOS instead of macOS
-        echo "🔧 Fixing Ruby compiler environment - iOS/macOS sysroot conflict..."
+        echo "🔧 Using macOS system Ruby instead of iOS-compiled setup-ruby..."
+        # Remove any PATH references to hostedtoolcache Ruby (iOS-compiled)
+        export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+        # Install bundler for system Ruby
+        sudo gem install bundler
+        # Verify we're using system Ruby, not hostedtoolcache
+        which ruby
+        ruby --version
+        which bundle
+        bundle --version
+    
+    - name: Setup macOS Development Environment
+      run: |
+        echo "🔧 Configuring development environment for macOS native compilation..."
+        
+        # Ensure proper PATH without iOS-compiled Ruby
+        export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
         
         # Force Command Line Tools selection
         sudo xcode-select -s /Library/Developer/CommandLineTools
         xcode-select -p
         
-        # CRITICAL: Clear iOS-related environment variables that confuse the compiler
-        unset IPHONEOS_DEPLOYMENT_TARGET
-        unset TARGETED_DEVICE_FAMILY
-        unset ARCHS
+        # Clear any iOS environment variables
+        unset IPHONEOS_DEPLOYMENT_TARGET 2>/dev/null || true
+        unset TARGETED_DEVICE_FAMILY 2>/dev/null || true
+        unset ARCHS 2>/dev/null || true
         
-        # Force macOS compilation environment
+        # Set macOS compilation environment  
         export MACOSX_DEPLOYMENT_TARGET="13.0"
         export SDKROOT="$(xcrun --show-sdk-path)"
-        export CFLAGS="-arch arm64"
-        export CXXFLAGS="-arch arm64"
-        export LDFLAGS="-arch arm64 -L$(brew --prefix)/lib"
-        export CPPFLAGS="-I$(brew --prefix)/include"
         
-        # Set GitHub environment variables
+        # Set for GitHub environment
+        echo "PATH=/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin" >> $GITHUB_ENV
         echo "MACOSX_DEPLOYMENT_TARGET=13.0" >> $GITHUB_ENV
         echo "SDKROOT=$(xcrun --show-sdk-path)" >> $GITHUB_ENV
-        echo "CFLAGS=-arch arm64" >> $GITHUB_ENV
-        echo "CXXFLAGS=-arch arm64" >> $GITHUB_ENV
-        echo "LDFLAGS=-arch arm64 -L$(brew --prefix)/lib" >> $GITHUB_ENV
-        echo "CPPFLAGS=-I$(brew --prefix)/include" >> $GITHUB_ENV
         
-        # Verify compiler targets macOS not iOS
-        echo "🔍 Verifying compiler environment:"
+        # Verify macOS compilation
+        echo "🔍 Compiler verification:"
         xcrun --show-sdk-path
-        clang -arch arm64 -v 2>&1 | head -5
+        which clang
     
-    - name: Configure Bundle for Native Extensions and Install Gems
+    - name: Install Gems with System Ruby
       run: |
-        echo "🔧 Configuring Bundle for native extension compilation..."
+        echo "🚀 Installing gems with macOS system Ruby..."
         
-        # Bundle-specific configuration for native extensions (CRITICAL)
-        bundle config set --local build.bigdecimal "--with-cflags='-arch arm64 -Wno-error=incompatible-pointer-types'"
-        bundle config set --local build.json "--with-cflags='-arch arm64 -std=c99 -Wno-error=implicit-function-declaration'"
-        bundle config set --local build.sysrandom "--with-cflags='-arch arm64 -Wno-error=incompatible-pointer-types'"
-        bundle config set --local build.nkf "--with-cflags='-arch arm64 -Wno-error=incompatible-pointer-types'"
-        bundle config set --local build.digest-crc "--with-cflags='-arch arm64 -Wno-error=incompatible-pointer-types'"
-        bundle config set --local build.ffi "--with-cflags='-arch arm64 -Wno-error=incompatible-pointer-types'"
-        
-        # Set Bundle environment variables (more reliable than shell env vars)
-        export BUNDLE_BUILD__BIGDECIMAL="--with-cflags='-arch arm64 -Wno-error=incompatible-pointer-types'"
-        export BUNDLE_BUILD__JSON="--with-cflags='-arch arm64 -std=c99 -Wno-error=implicit-function-declaration'"
-        export BUNDLE_BUILD__SYSRANDOM="--with-cflags='-arch arm64 -Wno-error=incompatible-pointer-types'"
-        
-        echo "🚀 Installing Ruby gems with Bundle-configured compiler settings..."
-        # Clear any existing failed bundle state
+        # Clear any cached failures
         rm -f Gemfile.lock
         
-        # Install with Bundle configuration (not relying on shell environment)
+        # Install with system Ruby (should work cleanly without iOS conflicts)
         bundle install --jobs 4 --retry 3
         
-        echo "✅ Gem installation completed successfully!"
-        
-        # Verify critical gems installed correctly
-        echo "🔍 Verifying gem installations:"
+        # Verify critical gems
+        echo "🔍 Verifying installations:"
         bundle exec ruby -e "require 'bigdecimal'; puts 'bigdecimal: OK'"
         bundle exec ruby -e "require 'json'; puts 'json: OK'"
+        bundle exec pod --version
+        echo "✅ All gems installed successfully!"
     
     - name: Prepare Fastlane Environment
       env:
