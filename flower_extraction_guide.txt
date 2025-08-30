@@ -1,0 +1,32 @@
+Flower Sprite Sheet Extraction Guide
+===================================
+
+Grid Layout: 2 columns × 6 rows
+Each flower: ~256x170 pixels approximately
+Left column: Closed flowers
+Right column: Bloomed flowers
+
+Coordinates for extraction (left, top, right, bottom):
+Row 1 (Red):
+- flower_red_closed.png: (0, 0, 256, 170)
+- flower_red_bloomed.png: (256, 0, 512, 170)
+
+Row 2 (Orange):
+- flower_orange_closed.png: (0, 170, 256, 340)
+- flower_orange_bloomed.png: (256, 170, 512, 340)
+
+Row 3 (Green):
+- flower_green_closed.png: (0, 340, 256, 510)
+- flower_green_bloomed.png: (256, 340, 512, 510)
+
+Row 4 (Light Green/Blue):
+- flower_yellow_closed.png: (0, 510, 256, 680)
+- flower_blue_bloomed.png: (256, 510, 512, 680)
+
+Row 5 (Blue Alternative):
+- flower_blue_closed.png: (0, 680, 256, 850)
+- flower_blue_alt_bloomed.png: (256, 680, 512, 850)
+
+Row 6 (Purple):
+- flower_purple_closed.png: (0, 850, 256, 1020)
+- flower_purple_bloomed.png: (256, 850, 512, 1020)

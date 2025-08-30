@@ -1,0 +1,37 @@
+Garden Background Sprite Sheet Extraction Guide
+==============================================
+
+Grid Layout: 4 columns × 3 rows
+Each element: ~256x256 pixels approximately
+Total image: 1024x768 pixels
+
+Coordinates for extraction (left, top, right, bottom):
+
+Row 1 (Isometric Platforms):
+- garden_platform_basic.png: (0, 0, 256, 256)
+- garden_platform_with_crystals.png: (256, 0, 512, 256)  
+- garden_platform_with_stairs.png: (512, 0, 768, 256)
+- garden_waterfall_left.png: (768, 0, 1024, 256)
+
+Row 2 (Water Features & Magic):
+- garden_waterfall_pool.png: (0, 256, 256, 512)
+- garden_waterfall_magical.png: (256, 256, 512, 512)
+- garden_magic_tree.png: (512, 256, 768, 512)
+- garden_big_tree.png: (768, 256, 1024, 512)
+
+Row 3 (Ground Elements):
+- garden_grass_mound.png: (0, 512, 256, 768)
+- garden_rainbow.png: (256, 512, 512, 768)
+- garden_magic_light.png: (512, 512, 768, 768)
+- garden_ancient_tree.png: (768, 512, 1024, 768)
+
+Additional Bottom Row:
+- garden_fruit_tree_small.png: (0, 768, 256, 1024)
+- garden_fruit_tree_medium.png: (256, 768, 512, 1024)
+- garden_magic_sparkle.png: (512, 768, 768, 1024)
+
+Background Usage:
+- Platforms: For maze ground tiles in different areas
+- Trees: For decorative background elements
+- Waterfalls: For special magical areas
+- Rainbow/Light: For completion celebrations and magic effects

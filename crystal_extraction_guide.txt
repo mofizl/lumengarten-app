@@ -1,0 +1,55 @@
+Crystal Sprite Sheet Extraction Guide
+====================================
+
+Grid Layout: 6 columns × 6 rows
+Each crystal: ~128x128 pixels
+Total image: 768x768 pixels
+
+Coordinates for extraction (left, top, right, bottom):
+Row 1 (Amethyst):
+- crystal_amethyst_pyramid_dormant.png: (0, 0, 128, 128)
+- crystal_amethyst_sphere_glowing.png: (128, 0, 256, 128)
+- crystal_amethyst_cube_dormant.png: (256, 0, 384, 128)
+- crystal_amethyst_hexagon_glowing.png: (384, 0, 512, 128)
+- crystal_extra_0_4.png: (512, 0, 640, 128)
+- crystal_extra_0_5.png: (640, 0, 768, 128)
+
+Row 2 (Emerald):
+- crystal_emerald_pyramid_glowing.png: (0, 128, 128, 256)
+- crystal_emerald_sphere_dormant.png: (128, 128, 256, 256)
+- crystal_emerald_cube_glowing.png: (256, 128, 384, 256)
+- crystal_emerald_hexagon_dormant.png: (384, 128, 512, 256)
+- crystal_extra_1_4.png: (512, 128, 640, 256)
+- crystal_extra_1_5.png: (640, 128, 768, 256)
+
+Row 3 (Emerald Variants):
+- crystal_extra_2_0.png: (0, 256, 128, 384)
+- crystal_extra_2_1.png: (128, 256, 256, 384)
+- crystal_extra_2_2.png: (256, 256, 384, 384)
+- crystal_extra_2_3.png: (384, 256, 512, 384)
+- crystal_extra_2_4.png: (512, 256, 640, 384)
+- crystal_extra_2_5.png: (640, 256, 768, 384)
+
+Row 4 (Sapphire):
+- crystal_sapphire_pyramid_dormant.png: (0, 384, 128, 512)
+- crystal_sapphire_sphere_glowing.png: (128, 384, 256, 512)
+- crystal_sapphire_cube_dormant.png: (256, 384, 384, 512)
+- crystal_sapphire_hexagon_glowing.png: (384, 384, 512, 512)
+- crystal_extra_3_4.png: (512, 384, 640, 512)
+- crystal_extra_3_5.png: (640, 384, 768, 512)
+
+Row 5 (Amber):
+- crystal_amber_pyramid_glowing.png: (0, 512, 128, 640)
+- crystal_amber_sphere_dormant.png: (128, 512, 256, 640)
+- crystal_amber_cube_glowing.png: (256, 512, 384, 640)
+- crystal_amber_hexagon_dormant.png: (384, 512, 512, 640)
+- crystal_extra_4_4.png: (512, 512, 640, 640)
+- crystal_extra_4_5.png: (640, 512, 768, 640)
+
+Row 6 (Amber Variants):
+- crystal_extra_5_0.png: (0, 640, 128, 768)
+- crystal_extra_5_1.png: (128, 640, 256, 768)
+- crystal_extra_5_2.png: (256, 640, 384, 768)
+- crystal_extra_5_3.png: (384, 640, 512, 768)
+- crystal_extra_5_4.png: (512, 640, 640, 768)
+- crystal_extra_5_5.png: (640, 640, 768, 768)
