@@ -1,0 +1,37 @@
+name: Simple iOS Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master ]
+
+jobs:
+  ios-build:
+    name: iOS Build (Basic)
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.35.2'
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Build iOS (No Code Sign)
+      run: flutter build ios --simulator --no-codesign
+      
+    - name: Archive iOS build
+      run: |
+        cd build/ios/iphonesimulator
+        zip -r lumengarten-ios-simulator.zip Runner.app
+        
+    - name: Upload iOS build
+      uses: actions/upload-artifact@v4
+      with:
+        name: lumengarten-ios-simulator
+        path: build/ios/iphonesimulator/lumengarten-ios-simulator.zip
