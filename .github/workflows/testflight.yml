@@ -1,0 +1,137 @@
+name: Deploy to TestFlight
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_version:
+        description: 'Build version (e.g., 1.0.0)'
+        required: true
+        default: '1.0.0'
+
+jobs:
+  deploy-testflight:
+    name: Deploy to TestFlight
+    runs-on: macos-14
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Select Xcode version
+      run: |
+        sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+        xcodebuild -version
+        
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.3'
+        cache: true
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Setup iOS Certificates
+      env:
+        IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+        IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+        IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+      run: |
+        # Create certificate and provisioning profile files
+        echo "$IOS_CERTIFICATE_BASE64" | base64 --decode > certificate.p12
+        echo "$IOS_PROVISIONING_PROFILE_BASE64" | base64 --decode > profile.mobileprovision
+        
+        # Create keychain
+        security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+        security set-keychain-settings -lut 21600 build.keychain
+        security default-keychain -s build.keychain
+        security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+        
+        # Convert P12 to PEM for import
+        openssl pkcs12 -in certificate.p12 -clcerts -nokeys -out cert.pem -passin pass:"$IOS_CERTIFICATE_PASSWORD"
+        openssl pkcs12 -in certificate.p12 -nocerts -nodes -out key.pem -passin pass:"$IOS_CERTIFICATE_PASSWORD"
+        
+        # Import certificate and key
+        security import cert.pem -k build.keychain -T /usr/bin/codesign -A
+        security import key.pem -k build.keychain -T /usr/bin/codesign -A
+        security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" build.keychain
+        
+        # Install provisioning profile
+        PROFILE_UUID=$(security cms -D -i profile.mobileprovision | grep -A 1 "UUID" | tail -1 | sed 's/.*<string>//' | sed 's/<\/string>.*//' | xargs)
+        mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+        cp profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/${PROFILE_UUID}.mobileprovision
+        
+    - name: Build iOS for App Store
+      run: |
+        export IPHONEOS_DEPLOYMENT_TARGET=12.0
+        flutter build ios --release
+        
+    - name: Archive iOS App
+      run: |
+        cd ios
+        xcodebuild -workspace Runner.xcworkspace \
+          -scheme Runner \
+          -configuration Release \
+          -destination 'generic/platform=iOS' \
+          -archivePath Runner.xcarchive \
+          CODE_SIGN_STYLE=Manual \
+          DEVELOPMENT_TEAM=${{ secrets.APP_STORE_CONNECT_TEAM_ID }} \
+          CODE_SIGN_IDENTITY="iPhone Distribution: Morris Merkel (${{ secrets.APP_STORE_CONNECT_TEAM_ID }})" \
+          PROVISIONING_PROFILE_SPECIFIER="Morris Merkel" \
+          archive
+          
+    - name: Export IPA
+      run: |
+        cd ios
+        cat > ExportOptions.plist << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+          <key>destination</key>
+          <string>export</string>
+          <key>method</key>
+          <string>app-store</string>
+          <key>teamID</key>
+          <string>${{ secrets.APP_STORE_CONNECT_TEAM_ID }}</string>
+          <key>uploadBitcode</key>
+          <false/>
+          <key>uploadSymbols</key>
+          <true/>
+          <key>signingStyle</key>
+          <string>manual</string>
+          <key>provisioningProfiles</key>
+          <dict>
+            <key>com.lumengarten.lumengartenApp</key>
+            <string>Morris Merkel</string>
+          </dict>
+        </dict>
+        </plist>
+        EOF
+        
+        xcodebuild -exportArchive \
+          -archivePath Runner.xcarchive \
+          -exportPath . \
+          -exportOptionsPlist ExportOptions.plist
+          
+    - name: Upload to TestFlight
+      env:
+        APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+        APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+      run: |
+        cd ios
+        echo "$APP_STORE_CONNECT_PRIVATE_KEY" | base64 --decode > AuthKey_$APP_STORE_CONNECT_API_KEY_ID.p8
+        
+        xcrun altool --upload-app \
+          --type ios \
+          --file "Runner.ipa" \
+          --apiKey "$APP_STORE_CONNECT_API_KEY_ID" \
+          --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"
+          
+    - name: Upload IPA Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-app-store-ipa
+        path: ios/Runner.ipa
