@@ -1,10 +1,10 @@
-name: Build and Deploy to App Stores
+name: Build and Test
 
 on:
   push:
     branches: [ master, main ]
   pull_request:
-    branches: [ master, main ]
+    branches: [ master, main, develop ]
 
 jobs:
   build-android:
@@ -26,6 +26,18 @@ jobs:
       with:
         flutter-version: '3.24.3'
         cache: true
+        cache-key: 'flutter-:os:-:channel:-:version:-:arch:-:hash:'
+        
+    - name: Cache Pub Dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ${{ env.PUB_CACHE }}
+          ~/.pub-cache
+          **/.dart_tool
+        key: pub-cache-android-${{ hashFiles('**/pubspec.lock') }}
+        restore-keys: |
+          pub-cache-android-
         
     - name: Install dependencies
       run: flutter pub get
@@ -57,9 +69,31 @@ jobs:
       with:
         flutter-version: '3.24.3'
         cache: true
+        cache-key: 'flutter-:os:-:channel:-:version:-:arch:-:hash:'
+        
+    - name: Cache Pub Dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ${{ env.PUB_CACHE }}
+          ~/.pub-cache
+          **/.dart_tool
+        key: pub-cache-ios-${{ hashFiles('**/pubspec.lock') }}
+        restore-keys: |
+          pub-cache-ios-
+          
+    - name: Cache iOS Pods
+      uses: actions/cache@v4
+      with:
+        path: ios/Pods
+        key: pods-simulator-${{ hashFiles('ios/Podfile.lock') }}
+        restore-keys: |
+          pods-simulator-
         
     - name: Install dependencies
-      run: flutter pub get
+      run: |
+        flutter pub get
+        cd ios && pod install && cd ..
       
     - name: Fix iOS deployment target
       run: |
