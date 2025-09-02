@@ -2,7 +2,7 @@
 platform :ios, '16.0'
 
 # Flutter specific configuration
-ENV['FLUTTER_VERSION'] = '3.24.3'
+ENV['FLUTTER_VERSION'] = '3.35.2'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
