@@ -1,0 +1,322 @@
+# Fastfile for Lumengarten iOS TestFlight Deployment
+
+default_platform(:ios)
+
+platform :ios do
+  before_all do
+    setup_ci
+  end
+
+  desc "Build and upload to TestFlight"
+  lane :testflight do
+    # Setup temporary keychain for CI - CRITICAL: default_keychain must be true for GitHub Actions
+    create_keychain(
+      name: "fastlane_tmp_keychain",
+      password: ENV["KEYCHAIN_PASSWORD"],
+      default_keychain: true,
+      unlock: true,
+      timeout: 3600,
+      lock_when_sleeps: false
+    )
+
+    # Import certificate - REQUIRED for signing
+    UI.message("🔐 Testing certificate file...")
+    cert_path = ENV["IOS_CERTIFICATE_PATH"]
+    UI.message("Certificate path: #{cert_path}")
+    UI.message("Certificate exists: #{File.exist?(cert_path)}")
+    if File.exist?(cert_path)
+      UI.message("Certificate file size: #{File.size(cert_path)} bytes")
+    end
+    
+    # Try multiple import methods
+    UI.message("Trying different import methods...")
+    
+    # Method 1: Without -T flags
+    begin
+      sh("security import \"#{ENV['IOS_CERTIFICATE_PATH']}\" -k fastlane_tmp_keychain -P \"#{ENV['IOS_CERTIFICATE_PASSWORD']}\"")
+      UI.success("Method 1 (no -T flags) worked!")
+    rescue => e
+      UI.error("Method 1 failed: #{e}")
+      
+      # Method 2: With different keychain path
+      begin
+        sh("security import \"#{ENV['IOS_CERTIFICATE_PATH']}\" -k ~/Library/Keychains/fastlane_tmp_keychain-db -P \"#{ENV['IOS_CERTIFICATE_PASSWORD']}\"")
+        UI.success("Method 2 (different keychain path) worked!")
+      rescue => e2
+        UI.error("Method 2 failed: #{e2}")
+        
+        # Method 3: Import to login keychain, then copy
+        begin
+          sh("security import \"#{ENV['IOS_CERTIFICATE_PATH']}\" -P \"#{ENV['IOS_CERTIFICATE_PASSWORD']}\"")
+          UI.success("Method 3 (login keychain) worked!")
+        rescue => e3
+          UI.error("All methods failed: #{e3}")
+          raise "Certificate import completely failed"
+        end
+      end
+    end
+    
+    # Debug: List available certificates in keychain
+    UI.message("🔍 Available certificates in keychain:")
+    sh("security find-identity -v -p codesigning fastlane_tmp_keychain")
+
+    install_provisioning_profile(
+      path: ENV["IOS_PROVISIONING_PROFILE_PATH"]
+    )
+    
+    # Get the UUID of the installed provisioning profile
+    profile_uuid = sh("security cms -D -i \"#{ENV['IOS_PROVISIONING_PROFILE_PATH']}\" | plutil -extract UUID xml1 -o - - | sed -n 's/.*<string>\\(.*\\)<\\/string>.*/\\1/p'").strip
+    UI.message("📱 Provisioning Profile UUID: #{profile_uuid}")
+
+    # Update project settings for distribution
+    update_project_team(
+      path: "Runner.xcodeproj",
+      teamid: ENV["DEVELOPMENT_TEAM"]
+    )
+    
+    # Disable automatic signing and set manual signing with provisioning profile UUID
+    update_code_signing_settings(
+      path: "Runner.xcodeproj", 
+      use_automatic_signing: false,
+      targets: ["Runner"],
+      code_sign_identity: "iPhone Distribution: Morris Merkel (QX8XC3CNTR)",
+      profile_uuid: profile_uuid
+    )
+
+    # Set Flutter environment for CI FIRST (updated for stable Ruby environment)
+    ENV['FLUTTER_ROOT'] = '/Users/runner/hostedtoolcache/flutter/3.24.3/x64'
+    ENV['PATH'] = "/opt/homebrew/bin:/usr/local/bin:#{ENV['FLUTTER_ROOT']}/bin:#{ENV['PATH']}"
+    
+    # Ensure CocoaPods uses correct Ruby version (from research)
+    ENV['LANG'] = 'en_US.UTF-8'
+    ENV['LC_ALL'] = 'en_US.UTF-8'
+    
+    # SIMPLIFIED SOLUTION: Use direct gem installation (Bundle-free approach)
+    UI.message("🚀 Using direct gem installation to avoid Bundle dependency conflicts...")
+    
+    # Verify direct CocoaPods installation
+    begin
+      sh("pod --version")
+      UI.success("✅ CocoaPods working directly!")
+    rescue => pod_error
+      UI.error("❌ Direct CocoaPods issue: #{pod_error}")
+      UI.message("🔧 Installing CocoaPods directly...")
+      
+      # Install CocoaPods directly
+      sh("gem install cocoapods --no-document")
+      
+      # Try CocoaPods again
+      sh("pod --version")
+      UI.success("✅ CocoaPods working after direct installation!")
+    end
+    
+    # Fastlane now handles the complete Flutter build
+    UI.message("🔨 Building Flutter iOS app via Fastlane...")
+    sh("flutter build ios --release --no-codesign")
+    
+    # Build signed IPA using Fastlane with extended timeout and CI optimizations
+    UI.message("🔨 Starting Xcode archive build with CI optimizations...")
+    begin
+      Timeout::timeout(2100) do  # 35 minute timeout (was 30)
+        ipa_path = build_ios_app(
+          workspace: "Runner.xcworkspace",
+          scheme: "Runner",
+          configuration: "Release",
+          export_method: "app-store",
+          export_options: {
+            provisioningProfiles: {
+              "com.lumengarten.lumengartenApp" => profile_uuid
+            },
+            signingStyle: "manual",
+            uploadBitcode: false,
+            uploadSymbols: true
+          },
+          output_directory: "fastlane/builds",
+          output_name: "Lumengarten.ipa",
+          # CI-specific optimizations:
+          skip_build_archive: false,
+          skip_codesigning: false,
+          silent: false,
+          suppress_xcode_output: false,
+          xcargs: "-allowProvisioningUpdates -allowProvisioningDeviceRegistration"
+        )
+      end
+    rescue Timeout::Error
+      UI.error("🚨 Xcode build timed out after 35 minutes")
+      UI.message("⚠️ This usually indicates hanging Run Script phases")
+      UI.message("✅ Build Phase reordering has been applied - retry should work")
+      raise "Build timeout - Build Phase fixes applied, retry recommended"
+    end
+    UI.message("Created signed IPA at: #{ipa_path}")
+    
+    # Debug environment variables
+    UI.message("🔍 Debug Environment Variables:")
+    UI.message("APP_STORE_CONNECT_API_KEY_ID: #{ENV['APP_STORE_CONNECT_API_KEY_ID']}")
+    UI.message("APP_STORE_CONNECT_API_KEY_PATH: #{ENV['APP_STORE_CONNECT_API_KEY_PATH']}")
+    
+    # Verify IPA exists before upload
+    if File.exist?(ipa_path)
+      UI.message("✅ IPA file confirmed at: #{ipa_path}")
+      
+      # Check if API key file exists
+      api_key_path = ENV["APP_STORE_CONNECT_API_KEY_PATH"]
+      if api_key_path && File.exist?(api_key_path)
+        UI.message("✅ API Key file found at: #{api_key_path}")
+      else
+        UI.error("❌ API Key file not found at: #{api_key_path}")
+        sh("find .. -name 'AuthKey*.p8' -type f")
+      end
+      
+      # Debug environment access step by step
+      UI.message("🔍 Step 1: Accessing APP_STORE_CONNECT_API_KEY_ID...")
+      
+      begin
+        key_id = ENV["APP_STORE_CONNECT_API_KEY_ID"]
+        UI.message("✅ key_id retrieved: #{key_id.nil? ? 'NIL' : 'SET'}")
+      rescue => e
+        UI.error("❌ Failed to access APP_STORE_CONNECT_API_KEY_ID: #{e}")
+        exit(1)
+      end
+      
+      UI.message("🔍 Step 2: Setting issuer_id...")
+      issuer_id = "d439615c-03af-424b-8ed7-98abfae18d23"
+      UI.message("✅ issuer_id set: #{issuer_id}")
+      
+      UI.message("🔍 Step 3: Accessing APP_STORE_CONNECT_API_KEY_PATH...")
+      begin
+        key_filepath = ENV["APP_STORE_CONNECT_API_KEY_PATH"]
+        UI.message("✅ key_filepath retrieved: #{key_filepath}")
+      rescue => e
+        UI.error("❌ Failed to access APP_STORE_CONNECT_API_KEY_PATH: #{e}")
+        exit(1)
+      end
+      
+      if key_id.nil? || key_id.empty?
+        UI.error("❌ APP_STORE_CONNECT_API_KEY_ID is nil or empty!")
+        exit(1)
+      end
+      
+      # Upload signed IPA to TestFlight
+      # Create API key object first, then use it for upload
+      api_key = app_store_connect_api_key(
+        key_id: key_id,
+        issuer_id: issuer_id,
+        key_filepath: key_filepath,
+        duration: 1200,
+        in_house: false
+      )
+      
+      upload_to_testflight(
+        api_key: api_key,
+        app_identifier: "com.lumengarten.lumengartenApp",
+        skip_waiting_for_build_processing: true,
+        ipa: ipa_path
+      )
+    else
+      UI.error("❌ IPA file not found at: #{ipa_path}")
+      sh("ls -la fastlane/builds/")
+    end
+
+    # Cleanup
+    delete_keychain(name: "fastlane_tmp_keychain")
+  end
+
+  desc "Alternative iOS build method - bypasses problematic Xcode Run Scripts"
+  lane :testflight_alternative do
+    # Setup identical to main testflight lane
+    create_keychain(
+      name: "fastlane_tmp_keychain",
+      password: ENV["KEYCHAIN_PASSWORD"],
+      default_keychain: true,
+      unlock: true,
+      timeout: 3600,
+      lock_when_sleeps: false
+    )
+
+    import_certificate(
+      certificate_path: ENV["IOS_CERTIFICATE_PATH"],
+      certificate_password: ENV["IOS_CERTIFICATE_PASSWORD"],
+      keychain_name: "fastlane_tmp_keychain",
+      keychain_password: ENV["KEYCHAIN_PASSWORD"]
+    )
+    
+    install_provisioning_profile(
+      path: ENV["IOS_PROVISIONING_PROFILE_PATH"]
+    )
+    
+    profile_uuid = sh("security cms -D -i \"#{ENV['IOS_PROVISIONING_PROFILE_PATH']}\" | plutil -extract UUID xml1 -o - - | sed -n 's/.*<string>\\(.*\\)<\\/string>.*/\\1/p'").strip
+
+    update_project_team(
+      path: "Runner.xcodeproj",
+      teamid: ENV["DEVELOPMENT_TEAM"]
+    )
+    
+    update_code_signing_settings(
+      path: "Runner.xcodeproj", 
+      use_automatic_signing: false,
+      targets: ["Runner"],
+      code_sign_identity: "iPhone Distribution: Morris Merkel (QX8XC3CNTR)",
+      profile_uuid: profile_uuid
+    )
+
+    # ALTERNATIVE METHOD: Manual Archive without problematic Build Phases
+    UI.message("🔨 Using alternative build method - manual xcodebuild archive...")
+    
+    # Set Flutter environment explicitly (stable Ruby 3.3.6 environment)  
+    ENV['FLUTTER_ROOT'] = '/Users/runner/hostedtoolcache/flutter/3.24.3/x64'
+    ENV['PATH'] = "#{ENV['FLUTTER_ROOT']}/bin:#{ENV['PATH']}"
+    
+    # Manual xcodebuild command bypassing Fastlane's build_ios_app
+    archive_path = "fastlane/builds/Runner.xcarchive"
+    
+    sh("xcodebuild -workspace Runner.xcworkspace -scheme Runner -configuration Release -archivePath #{archive_path} archive CODE_SIGN_IDENTITY='iPhone Distribution: Morris Merkel (QX8XC3CNTR)' PROVISIONING_PROFILE='#{profile_uuid}' -allowProvisioningUpdates")
+    
+    # Manual export IPA
+    ipa_path = "fastlane/builds/Lumengarten.ipa"
+    export_options_plist = "fastlane/builds/ExportOptions.plist"
+    
+    # Create Export Options plist
+    File.write(export_options_plist, <<-PLIST)
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>method</key>
+    <string>app-store</string>
+    <key>provisioningProfiles</key>
+    <dict>
+        <key>com.lumengarten.lumengartenApp</key>
+        <string>#{profile_uuid}</string>
+    </dict>
+    <key>signingStyle</key>
+    <string>manual</string>
+    <key>uploadBitcode</key>
+    <false/>
+    <key>uploadSymbols</key>
+    <true/>
+</dict>
+</plist>
+PLIST
+    
+    sh("xcodebuild -exportArchive -archivePath #{archive_path} -exportPath fastlane/builds -exportOptionsPlist #{export_options_plist}")
+    
+    # Upload to TestFlight
+    api_key = app_store_connect_api_key(
+      key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"],
+      issuer_id: "d439615c-03af-424b-8ed7-98abfae18d23",
+      key_filepath: ENV["APP_STORE_CONNECT_API_KEY_PATH"],
+      duration: 1200,
+      in_house: false
+    )
+      
+    upload_to_testflight(
+      api_key: api_key,
+      app_identifier: "com.lumengarten.lumengartenApp",
+      skip_waiting_for_build_processing: true,
+      ipa: ipa_path
+    )
+
+    # Cleanup
+    delete_keychain(name: "fastlane_tmp_keychain")
+  end
+end
