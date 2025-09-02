@@ -28,6 +28,24 @@ jobs:
     - name: Install dependencies
       run: flutter pub get
       
+    - name: Clean Flutter cache
+      run: flutter clean
+      
+    - name: Reinstall dependencies  
+      run: flutter pub get
+      
+    - name: Clean iOS build cache
+      run: |
+        rm -rf ios/Pods
+        rm -rf ios/.symlinks
+        rm -rf ios/Flutter/Flutter.framework
+        rm -rf ios/Flutter/Flutter.podspec
+        
+    - name: Install iOS dependencies
+      run: |
+        cd ios
+        pod install --repo-update
+        
     - name: Build iOS Simulator
       run: flutter build ios --simulator --no-codesign
       
