@@ -1,0 +1,54 @@
+name: Stage 2 - iOS Device Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_mode:
+        description: 'Build mode'
+        required: true
+        default: 'release'
+        type: choice
+        options:
+        - release
+        - profile
+
+jobs:
+  ios-device:
+    name: iOS Device Build (Unsigned)
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.35.2'
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Build iOS Device (Unsigned)
+      run: |
+        flutter build ios --${{ github.event.inputs.build_mode || 'release' }} --no-codesign
+      
+    - name: Verify build output
+      run: |
+        ls -la build/ios/iphoneos/
+        du -sh build/ios/iphoneos/Runner.app
+        
+    - name: Create unsigned IPA structure
+      run: |
+        cd build/ios/iphoneos
+        mkdir -p Payload
+        cp -R Runner.app Payload/
+        zip -r "lumengarten-ios-unsigned-$(date +%Y%m%d-%H%M%S).ipa" Payload
+        rm -rf Payload
+        
+    - name: Upload unsigned IPA
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-device-unsigned
+        path: build/ios/iphoneos/*.ipa
+        retention-days: 30

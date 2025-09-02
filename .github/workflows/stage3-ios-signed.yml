@@ -1,0 +1,120 @@
+name: Stage 3 - iOS Signed IPA (TestFlight Ready)
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_version:
+        description: 'Build version (e.g., 1.0.0+1)'
+        required: true
+        default: '1.0.0+1'
+      skip_testflight:
+        description: 'Skip TestFlight upload (just create IPA)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  ios-signed:
+    name: iOS Signed Build
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.35.2'
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Setup iOS Certificates (if secrets available)
+      if: ${{ env.IOS_CERTIFICATE_BASE64 && env.IOS_PROVISIONING_PROFILE_BASE64 }}
+      env:
+        IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+        IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+        IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+      run: |
+        # Certificate Import (simplified)
+        echo "$IOS_CERTIFICATE_BASE64" | base64 --decode > certificate.p12
+        echo "$IOS_PROVISIONING_PROFILE_BASE64" | base64 --decode > profile.mobileprovision
+        
+        # Import to keychain
+        security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+        security set-keychain-settings -lut 21600 build.keychain
+        security default-keychain -s build.keychain
+        security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+        
+        # Import certificate
+        security import certificate.p12 -k build.keychain -P "$IOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -A
+        security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" build.keychain
+        
+        # Install provisioning profile
+        PROFILE_UUID=$(security cms -D -i profile.mobileprovision | grep -A 1 "UUID" | tail -1 | sed 's/.*<string>//' | sed 's/<\/string>.*//' | xargs)
+        mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+        cp profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/${PROFILE_UUID}.mobileprovision
+        
+    - name: Build iOS Release
+      run: flutter build ios --release
+      
+    - name: Archive and Export IPA
+      run: |
+        cd ios
+        xcodebuild -workspace Runner.xcworkspace \
+          -scheme Runner \
+          -configuration Release \
+          -destination 'generic/platform=iOS' \
+          -archivePath Runner.xcarchive \
+          archive
+          
+        # Create export options
+        cat > ExportOptions.plist << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+          <key>destination</key>
+          <string>export</string>
+          <key>method</key>
+          <string>app-store</string>
+          <key>teamID</key>
+          <string>QX8XC3CNTR</string>
+          <key>uploadBitcode</key>
+          <false/>
+          <key>uploadSymbols</key>
+          <true/>
+        </dict>
+        </plist>
+        EOF
+        
+        xcodebuild -exportArchive \
+          -archivePath Runner.xcarchive \
+          -exportPath . \
+          -exportOptionsPlist ExportOptions.plist
+          
+    - name: Upload TestFlight IPA
+      if: ${{ !github.event.inputs.skip_testflight }}
+      env:
+        APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+        APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+      run: |
+        cd ios
+        echo "$APP_STORE_CONNECT_PRIVATE_KEY" | base64 --decode > AuthKey_$APP_STORE_CONNECT_API_KEY_ID.p8
+        
+        # Upload with xcrun altool (more reliable than Fastlane)
+        xcrun altool --upload-app \
+          --type ios \
+          --file "Runner.ipa" \
+          --apiKey "$APP_STORE_CONNECT_API_KEY_ID" \
+          --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"
+          
+    - name: Upload signed IPA artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-testflight-ready
+        path: ios/Runner.ipa
+        retention-days: 30

@@ -1,0 +1,49 @@
+name: Stage 1 - iOS Simulator Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master ]
+    paths-ignore: 
+      - 'README.md'
+      - 'docs/**'
+
+jobs:
+  ios-simulator:
+    name: iOS Simulator Build
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.35.2'
+        
+    - name: Flutter doctor
+      run: flutter doctor -v
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Build iOS Simulator
+      run: flutter build ios --simulator --no-codesign
+      
+    - name: Verify build output
+      run: |
+        ls -la build/ios/iphonesimulator/
+        du -sh build/ios/iphonesimulator/Runner.app
+      
+    - name: Archive simulator build
+      run: |
+        cd build/ios/iphonesimulator
+        zip -r "lumengarten-ios-simulator-$(date +%Y%m%d-%H%M%S).zip" Runner.app
+        
+    - name: Upload simulator build
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-simulator-build
+        path: build/ios/iphonesimulator/*.zip
+        retention-days: 30

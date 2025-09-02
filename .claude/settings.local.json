@@ -20,7 +20,8 @@
       "Bash(mv:*)",
       "Bash(flutter run:*)",
       "WebSearch",
-      "Read(/C:\\Android\\sdk/**)"
+      "Read(/C:\\Android\\sdk/**)",
+      "Read(C:\\c\\Users\\mofiz\\Vorschulapp/**)"
     ],
     "deny": [],
     "ask": [],
