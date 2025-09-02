@@ -1,6 +1,8 @@
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flame/events.dart';
+import 'package:flame/flame.dart';
+import 'package:flame/sprite.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
@@ -46,7 +48,18 @@ class AdventureLabyrinthGame extends FlameGame with HasCollisionDetection, HasKe
     // Set up camera
     camera.viewfinder.zoom = cameraZoom;
     
+    // Preload spritesheets for better performance
+    await _preloadSpritesheets();
+    
     await _initializeLevel();
+  }
+  
+  Future<void> _preloadSpritesheets() async {
+    // Preload crystal and hedge spritesheets in parallel for better performance
+    await Future.wait([
+      CrystalSpritesheet.load(),
+      HedgeSpritesheet.load(),
+    ]);
   }
   
   Future<void> _initializeLevel() async {
@@ -58,8 +71,9 @@ class AdventureLabyrinthGame extends FlameGame with HasCollisionDetection, HasKe
     // Generate maze layout
     _generateMaze();
     
-    // Create labyrinth map component
-    labyrinthMap = LabyrinthMap(mazeData);
+    // Create labyrinth map component with seasonal variety
+    final season = _getSeasonForLevel(currentLevel);
+    labyrinthMap = LabyrinthMap(mazeData, currentSeason: season);
     add(labyrinthMap);
     
     // Find starting position (should be at 1,1)
@@ -169,7 +183,7 @@ class AdventureLabyrinthGame extends FlameGame with HasCollisionDetection, HasKe
         tile.y * LabyrinthConfig.tileSize + LabyrinthConfig.tileSize / 2
       );
       
-      final crystal = MagicCrystal(worldPos, i % 4); // Different crystal types
+      final crystal = MagicCrystal(worldPos, i % 30); // Use more variety from new spritesheet
       crystals.add(crystal);
       add(crystal);
     }
@@ -278,30 +292,122 @@ class AdventureLabyrinthGame extends FlameGame with HasCollisionDetection, HasKe
       dunki.stopContinuousMovement();
     }
   }
+  
+  // Get season based on level for visual variety
+  HedgeSeason _getSeasonForLevel(int level) {
+    switch (level % 4) {
+      case 0: return HedgeSeason.spring;
+      case 1: return HedgeSeason.summer;
+      case 2: return HedgeSeason.autumn;
+      case 3: return HedgeSeason.winter;
+      default: return HedgeSeason.spring;
+    }
+  }
 }
 
-/// Labyrinth Map Component - Renders the tile-based maze
+/// Hedge Spritesheet Manager - Handles the new hedgestyle_spritesheet_neu.png
+class HedgeSpritesheet {
+  static SpriteSheet? _spriteSheet;
+  static bool _loaded = false;
+  
+  static Future<void> load() async {
+    if (_loaded) return;
+    
+    try {
+      final image = await Flame.images.load('games/labyrinth/tiles/hedgestyle_spritesheet_neu.png');
+      _spriteSheet = SpriteSheet(
+        image: image,
+        srcSize: Vector2(256.0, 256.0), // Each hedge tile is 256x256 in the spritesheet
+      );
+      _loaded = true;
+    } catch (e) {
+      _loaded = false;
+      _spriteSheet = null;
+    }
+  }
+  
+  static Sprite? getHedgeSprite(HedgeSeason season, HedgeType type) {
+    if (_spriteSheet == null || !_loaded) return null;
+    
+    // Spritesheet is 4 columns x 6 rows (24 hedge tiles total)
+    // Map seasons to specific rows based on the image layout
+    int row;
+    switch (season) {
+      case HedgeSeason.spring:
+        row = 0; // Top row - bright green
+        break;
+      case HedgeSeason.summer:
+        row = 2; // Middle green with darker tones
+        break;
+      case HedgeSeason.autumn:
+        row = 3; // Orange/yellow rows
+        break;
+      case HedgeSeason.winter:
+        row = 5; // Bottom row - blue/ice
+        break;
+    }
+    
+    int col = type.index;
+    
+    return _spriteSheet!.getSpriteById(row * 4 + col);
+  }
+  
+  static bool get isLoaded => _loaded;
+}
+
+/// Enums for hedge variety
+enum HedgeSeason { 
+  spring,      // Row 0-1: Bright green
+  summer,      // Row 2: Darker green
+  autumn,      // Row 3-4: Orange/yellow
+  winter       // Row 5: Blue/ice
+}
+
+enum HedgeType {
+  straight,    // Column 0: Straight hedge
+  corner,      // Column 1: Corner hedge  
+  tJunction,   // Column 2: T-junction
+  crossroads   // Column 3: Crossroads
+}
+
+/// Labyrinth Map Component - Renders the tile-based maze with seasonal hedge variety
 class LabyrinthMap extends Component with HasGameRef<AdventureLabyrinthGame> {
   final List<List<int>> mazeData;
   late Sprite wallSprite;
   late Sprite pathSprite;
   bool spritesLoaded = false;
+  final HedgeSeason currentSeason;
   
-  LabyrinthMap(this.mazeData);
+  LabyrinthMap(this.mazeData, {this.currentSeason = HedgeSeason.spring});
   
   @override
   Future<void> onLoad() async {
     super.onLoad();
     
-    try {
-      // Try to load individual hedge wall sprite
-      wallSprite = await Sprite.load('games/labyrinth/tiles/individual/hedge_spring_straight.png');
-      // For path, we'll use a simple ground texture 
-      pathSprite = await Sprite.load('games/labyrinth/backgrounds/individual/bg_grass_mound.png');
+    // Hedge spritesheet should already be preloaded by game initialization
+    if (HedgeSpritesheet.isLoaded) {
+      // Use straight hedge from current season as default wall sprite
+      wallSprite = HedgeSpritesheet.getHedgeSprite(currentSeason, HedgeType.straight)!;
       spritesLoaded = true;
+    }
+    
+    // Fallback to individual sprites
+    if (!spritesLoaded) {
+      try {
+        // Try to load individual hedge wall sprite
+        wallSprite = await Sprite.load('games/labyrinth/tiles/individual/hedge_spring_straight.png');
+        spritesLoaded = true;
+      } catch (e) {
+        // Fallback to simple colored rectangles
+        spritesLoaded = false;
+      }
+    }
+    
+    // Try to load path sprite (keep existing logic)
+    try {
+      pathSprite = await Sprite.load('games/labyrinth/backgrounds/individual/bg_grass_mound.png');
     } catch (e) {
-      // Fallback to simple colored rectangles
-      spritesLoaded = false;
+      // Will use colored rectangles for path
     }
   }
   
@@ -612,10 +718,44 @@ class DunkiCharacter extends SpriteComponent with HasGameRef<AdventureLabyrinthG
   }
 }
 
-/// Magic Crystal with ChatGPT sprites
+/// Crystal Spritesheet Manager - Handles the new crystals_spritesheet_neu.png
+class CrystalSpritesheet {
+  static SpriteSheet? _spriteSheet;
+  static bool _loaded = false;
+  
+  static Future<void> load() async {
+    if (_loaded) return;
+    
+    try {
+      final image = await Flame.images.load('games/labyrinth/crystals/crystals_spritesheet_neu.png');
+      _spriteSheet = SpriteSheet(
+        image: image,
+        srcSize: Vector2(256.0, 256.0), // Each crystal is 256x256 in the spritesheet
+      );
+      _loaded = true;
+    } catch (e) {
+      _loaded = false;
+      _spriteSheet = null;
+    }
+  }
+  
+  static Sprite? getCrystalSprite(int index) {
+    if (_spriteSheet == null || !_loaded) return null;
+    
+    // Spritesheet is 5 columns x 6 rows (30 crystals total)
+    final col = index % 5;
+    final row = index ~/ 5;
+    
+    return _spriteSheet!.getSpriteById(row * 5 + col);
+  }
+  
+  static bool get isLoaded => _loaded;
+}
+
+/// Magic Crystal with improved ChatGPT spritesheet sprites
 class MagicCrystal extends SpriteComponent with HasGameRef<AdventureLabyrinthGame> {
   double glitterTimer = 0.0;
-  final int crystalType; // 0=amethyst, 1=emerald, 2=sapphire, 3=amber
+  final int crystalType; // Now supports 0-29 crystal types from spritesheet
   bool collected = false;
   
   MagicCrystal(Vector2 position, this.crystalType) : super(size: Vector2(40, 40)) {
@@ -627,30 +767,63 @@ class MagicCrystal extends SpriteComponent with HasGameRef<AdventureLabyrinthGam
   Future<void> onLoad() async {
     super.onLoad();
     
-    // Select sprite based on crystal type
-    try {
-      String spritePath;
-      switch (crystalType) {
-        case 0:
-          spritePath = 'games/labyrinth/crystals/individual/crystal_amethyst_sphere_glowing.png';
-          break;
-        case 1:
-          spritePath = 'games/labyrinth/crystals/individual/crystal_emerald_cube_glowing.png';
-          break;
-        case 2:
-          spritePath = 'games/labyrinth/crystals/individual/crystal_sapphire_sphere_glowing.png';
-          break;
-        case 3:
-          spritePath = 'games/labyrinth/crystals/individual/crystal_amber_pyramid_glowing.png';
-          break;
-        default:
-          spritePath = 'games/labyrinth/crystals/individual/crystal_amethyst_sphere_glowing.png';
+    // Spritesheet should already be preloaded by game initialization
+    if (CrystalSpritesheet.isLoaded) {
+      // Enhanced variety: use different crystal colors and shapes
+      int spriteIndex = 0;
+      if (crystalType < 4) {
+        // Keep compatibility with original 4 crystal types, but use beautiful new sprites
+        switch (crystalType) {
+          case 0: spriteIndex = 0; break;   // Purple crystal (top-left)
+          case 1: spriteIndex = 5; break;   // Green crystal (row 1, col 0)
+          case 2: spriteIndex = 12; break;  // Blue crystal (row 2, col 2)
+          case 3: spriteIndex = 19; break;  // Yellow/amber crystal (row 3, col 4)
+          default: spriteIndex = 0; break;
+        }
+      } else {
+        // For levels with more crystals, use the full variety (30 different crystals)
+        // Group by colors: purple (0-4), green (5-9), blue (10-14), orange/yellow (15-19), mixed (20-29)
+        final colorGroups = [
+          [0, 1, 2, 3, 4],           // Purple variants
+          [5, 6, 7, 8, 9],           // Green variants  
+          [10, 11, 12, 13, 14],      // Blue variants
+          [15, 16, 17, 18, 19],      // Orange/yellow variants
+          [20, 21, 22, 23, 24, 25, 26, 27, 28, 29] // Mixed colors
+        ];
+        
+        final colorGroup = colorGroups[crystalType % colorGroups.length];
+        spriteIndex = colorGroup[crystalType ~/ colorGroups.length % colorGroup.length];
       }
       
-      sprite = await Sprite.load(spritePath);
-    } catch (e) {
-      // Fallback to colored circle
-      sprite = null;
+      sprite = CrystalSpritesheet.getCrystalSprite(spriteIndex);
+    }
+    
+    // Fallback to individual sprites if spritesheet fails
+    if (sprite == null) {
+      try {
+        String spritePath;
+        switch (crystalType) {
+          case 0:
+            spritePath = 'games/labyrinth/crystals/individual/crystal_amethyst_sphere_glowing.png';
+            break;
+          case 1:
+            spritePath = 'games/labyrinth/crystals/individual/crystal_emerald_cube_glowing.png';
+            break;
+          case 2:
+            spritePath = 'games/labyrinth/crystals/individual/crystal_sapphire_sphere_glowing.png';
+            break;
+          case 3:
+            spritePath = 'games/labyrinth/crystals/individual/crystal_amber_pyramid_glowing.png';
+            break;
+          default:
+            spritePath = 'games/labyrinth/crystals/individual/crystal_amethyst_sphere_glowing.png';
+        }
+        
+        sprite = await Sprite.load(spritePath);
+      } catch (e) {
+        // Final fallback to colored circle
+        sprite = null;
+      }
     }
   }
   
