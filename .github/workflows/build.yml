@@ -9,7 +9,8 @@ on:
 jobs:
   build-android:
     name: Build Android APK
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
     
     steps:
     - name: Checkout code
@@ -19,12 +20,12 @@ jobs:
       uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
-        java-version: '17'
+        java-version: '21'
         
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.24.3'
+        flutter-version: '3.35.2'
         cache: true
         cache-key: 'flutter-:os:-:channel:-:version:-:arch:-:hash:'
         
@@ -40,7 +41,9 @@ jobs:
           pub-cache-android-
         
     - name: Install dependencies
-      run: flutter pub get
+      run: |
+        flutter doctor -v
+        flutter pub get
       
     - name: Build Android APK
       run: flutter build apk --release
@@ -54,6 +57,7 @@ jobs:
   build-ios:
     name: Build iOS (Simulator)
     runs-on: macos-14
+    timeout-minutes: 45
     
     steps:
     - name: Checkout code
@@ -61,13 +65,13 @@ jobs:
       
     - name: Select Xcode version
       run: |
-        sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+        sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer
         xcodebuild -version
         
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.24.3'
+        flutter-version: '3.35.2'
         cache: true
         cache-key: 'flutter-:os:-:channel:-:version:-:arch:-:hash:'
         
@@ -92,13 +96,14 @@ jobs:
         
     - name: Install dependencies
       run: |
+        flutter doctor -v
         flutter pub get
-        cd ios && pod install && cd ..
+        cd ios && pod install --repo-update && cd ..
       
     - name: Fix iOS deployment target
       run: |
-        export IPHONEOS_DEPLOYMENT_TARGET=12.0
-        sed -i.bak 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*/IPHONEOS_DEPLOYMENT_TARGET = 12.0/g' ios/Runner.xcodeproj/project.pbxproj
+        export IPHONEOS_DEPLOYMENT_TARGET=16.0
+        sed -i.bak 's/IPHONEOS_DEPLOYMENT_TARGET = [0-9.]*/IPHONEOS_DEPLOYMENT_TARGET = 16.0/g' ios/Runner.xcodeproj/project.pbxproj
         
     - name: Build iOS (Simulator)
       run: flutter build ios --simulator --no-codesign

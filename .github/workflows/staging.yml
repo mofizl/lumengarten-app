@@ -23,13 +23,13 @@ jobs:
       
     - name: Select Xcode version
       run: |
-        sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+        sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer
         xcodebuild -version
         
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.24.3'
+        flutter-version: '3.35.2'
         cache: true
         cache-key: 'flutter-staging-:os:-:channel:-:version:-:arch:-:hash:'
         
@@ -91,7 +91,7 @@ jobs:
         
     - name: Build iOS for Staging (AdHoc)
       run: |
-        export IPHONEOS_DEPLOYMENT_TARGET=12.0
+        export IPHONEOS_DEPLOYMENT_TARGET=16.0
         flutter build ios --release --no-codesign
         
     - name: Create unsigned IPA for staging

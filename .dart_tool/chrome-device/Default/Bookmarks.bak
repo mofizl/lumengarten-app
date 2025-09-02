@@ -1,0 +1,150 @@
+{
+   "checksum": "f4fd905a314feadfaededed4a50a3e1e",
+   "roots": {
+      "bookmark_bar": {
+         "children": [ {
+            "date_added": "13392561202194495",
+            "date_last_used": "13399249419936879",
+            "guid": "2ce23616-8227-416f-888b-6d1c948c17c7",
+            "id": "9",
+            "name": "Google Maps",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://www.google.de/maps/@48.095514,11.4657468,15z?entry=ttu&g_ep=EgoyMDI1MDUyMS4wIKXMDSoASAFQAw%3D%3D",
+            "visit_count": 3
+         }, {
+            "date_added": "13397342456630548",
+            "date_last_used": "13399504167758407",
+            "guid": "fef38fd8-e738-41bf-8a66-1658080f3e34",
+            "id": "10",
+            "name": "Claude",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://claude.ai/new",
+            "visit_count": 7
+         }, {
+            "date_added": "13398026391740689",
+            "date_last_used": "13399243610715939",
+            "guid": "0f26bceb-91b1-4d74-8a3a-2f4d983c2c4c",
+            "id": "11",
+            "name": "Jahresübersicht Kommissariat 11",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "http://127.0.0.1:5000/dienstplan/july/2025",
+            "visit_count": 8
+         }, {
+            "date_added": "13399682077289236",
+            "date_last_used": "0",
+            "guid": "f8ab8ff8-a676-4e3a-bc23-41ed534ffbd2",
+            "id": "12",
+            "name": "App Store Connect",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://appstoreconnect.apple.com/apps/6751073326/distribution/ios/version/inflight",
+            "visit_count": 0
+         }, {
+            "date_added": "13400466133028987",
+            "date_last_used": "13401042923497836",
+            "guid": "6a746262-7956-4227-b9f4-94f9f41a7d59",
+            "id": "13",
+            "name": "GitHub",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://github.com/",
+            "visit_count": 6
+         }, {
+            "date_added": "13400466160616679",
+            "date_last_used": "0",
+            "guid": "8af666c4-46ac-4d09-8412-75c1c8680843",
+            "id": "14",
+            "name": "App Store Connect",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://appstoreconnect.apple.com/login",
+            "visit_count": 0
+         }, {
+            "date_added": "13400620910829525",
+            "date_last_used": "13400712583454262",
+            "guid": "61700a14-9f3c-4a1b-8caf-fd81df7a9b49",
+            "id": "15",
+            "name": "Bitrise - Mobile Continuous Integration and Delivery - iOS & Android Build Automation",
+            "show_icon": false,
+            "source": "sync",
+            "type": "url",
+            "url": "https://app.bitrise.io/build/a40d087f-1a8a-45b5-a7be-2b47376d55a4",
+            "visit_count": 1
+         }, {
+            "date_added": "13401068377546558",
+            "date_last_used": "0",
+            "guid": "2dbc1d75-513f-45cd-a091-7006bd0811c1",
+            "id": "8",
+            "name": "Lenovo Support",
+            "show_icon": false,
+            "source": "oem_preload",
+            "type": "url",
+            "url": "https://support.lenovo.com/",
+            "visit_count": 0
+         }, {
+            "date_added": "13401068377546518",
+            "date_last_used": "0",
+            "guid": "f12a1a18-7a61-4ede-b4f9-07c23e698a01",
+            "id": "7",
+            "name": "Lenovo",
+            "show_icon": false,
+            "source": "oem_preload",
+            "type": "url",
+            "url": "https://www.lenovo.com/",
+            "visit_count": 0
+         }, {
+            "date_added": "13401068377546349",
+            "date_last_used": "0",
+            "guid": "d02199ca-482d-41ac-bd51-a43c92c823a2",
+            "id": "6",
+            "name": "McAfee",
+            "show_icon": false,
+            "source": "oem_preload",
+            "type": "url",
+            "url": "https://consroute.mcafee.com/app?csrc=browserfavaffid=714clicksrc=browserfav",
+            "visit_count": 0
+         } ],
+         "date_added": "13401068377406982",
+         "date_last_used": "0",
+         "date_modified": "13401068377546558",
+         "guid": "0bc5d13f-2cba-5d74-951f-3f233fe6c908",
+         "id": "1",
+         "name": "Favoritenleiste",
+         "source": "unknown",
+         "type": "folder"
+      },
+      "other": {
+         "children": [  ],
+         "date_added": "13401068377406982",
+         "date_last_used": "0",
+         "date_modified": "0",
+         "guid": "82b081ec-3dd3-529c-8475-ab6c344590dd",
+         "id": "2",
+         "name": "Weitere Favoriten",
+         "source": "unknown",
+         "type": "folder"
+      },
+      "synced": {
+         "children": [  ],
+         "date_added": "13401068377406982",
+         "date_last_used": "0",
+         "date_modified": "0",
+         "guid": "4cf2e351-0e85-532b-bb37-df045d8f8d0f",
+         "id": "3",
+         "name": "Mobile Favoriten",
+         "source": "unknown",
+         "type": "folder"
+      }
+   },
+   "sync_metadata": "CjEKDgiIgQISCH7rsPuYAQAAEgAqGDFWd2QrZFI2NjJQdFFiOW9JKzdTZFE9PUgDoAYHEq0BCA8SqAEKHFhVcy91MFJOTUxWTnprMTVueTFlOWY2bloxND0SJDYxNzAwYTE0LTlmM2MtNGExYi04Y2FmLWZkODFkZjdhOWI0ORgAIAAoADDhr4HAjjM47cillI4zQO3IpZSOM0ocRWxLTlZUd1cwYSszbklHei9xVjFFRDA5cWFVPVofIh3+Wk82RUFOQkJuR1JVRkV0cXdFbDZtVWVjbWZjPWV/VU1Swj4CYAUSrQEIDBKoAQocZ2Z0L2NTWW9mZ2ZweGY0RDVsalNTYXc4bUQ4PRIkZjhhYjhmZjgtYTY3Ni00ZTNhLWJjMjMtNDFlZDUzNGZmYmQyGAAgACgAMKfqz9SKMzjO7M/UijNAzuzP1IozShxmbzdSQUJHQ09EZmNHNFllMjZmNzdDaWdoTU09Wh8iHfd0R0NRSnA4VDdtUVgyOCtqZkl5bnA5dHBBNTQ9ZYwzHUPCPgJgBRKtAQgLEqgBChx0WkEwS0Z4ZWFicjlWOHgvQURjL1ZzQ1ZsbFE9EiQwZjI2YmNlYi05MWIxLTRkNzQtOGEzYS0yZjRkOTgzYzJjNGMYACAAKAAwp/bFg4kzOOKtkL+EM0DirZC/hDNKHEpBdkNldjgvTmVJdEVNa2xTa0ZpSjBDb2krcz1aHyId7mdoY2NzSllvN2dlcXpPM3hQaWE3UDdBd0NKOD1lJihzhsI+AmAFEq0BCAoSqAEKHGhVQllzOVliMGFkNktHa1FOTUxJUGxHQzlaZz0SJGZlZjM4ZmQ4LWU3MzgtNDFiZi04YTY2LTE2NTgwODBmM2UzNBgAIAAoADDz/OT/iTM4ouKA+YEzQKLigPmBM0ocSW1yMWliK0Q4aGtXclFKWTZJQ2pZKzJsN0tNPVofIh3dUHNWZ2pjUHhBYmMvVU9YcTVqSU1IcnpBSmpvPWW2eiWAwj4CYAUSrQEICRKoAQocZTIyY0ZobGltTzhkVlVUbUdKNUFSV204a3NVPRIkMmNlMjM2MTYtODIyNy00MTZmLTg4OGItNmQxYzk0OGMxN2M3GAAgACgAMPa9qIaJMziOoJCR8DJAjqCQkfAyShw0NVNET2NadzY2NWdMdkNOSVNzWTduNHc1T3M9Wh8iHbphMXdFZ2wxWjUwK2xrV1RzVktXSlVIbGhBOTg9ZXnzPd/CPgJgBRKOAQgBEokBChx5eEovNmZ2a2VjcjdrcDVFUXpCNHRXTHBkYkU9EiQ0ZDJlZThmZS0wYjlkLTUwYTMtYTI5MS1lMGU2NDU2NzdjOGEYACAAKAAw95rFrN4yOJGfxazeMkCRn8Ws3jJKHGFSQ1dMZ2hGOWI1SW5xS0lEdnVKL2p2UWtGYz1aAGUAAAAAwj4CYAASjgEIAhKJAQocWWNTVG9udkVTUHdxQ3M0TDJjclZodjY4TDk4PRIkNmFmMjBkNzQtMjAwMC01MGE1LWJjYzgtMmI0M2YyMmFkYjgyGAAgACgAMPiaxazeMjixn8Ws3jJAsZ/FrN4yShxvUFZraHdCUmJWNjVLQ1dSMitJT05IV29PdTg9WgBlAAAAAMI+AmAAEq0BCA4SqAEKHEZsdWc3d1M2aUZvdWw3aTlqNVZtU1lBeFIvbz0SJDhhZjY2NmM0LTQ2YWMtNGQwOS04NDEyLTc1YzFjODY4MDg0MxgAIAAoADDpt8DKjTM4lLrAyo0zQJS6wMqNM0ocd3NzcFd3N2IyemV4VDBnRzhYWE95L3ZoYW9ZPVofIh39MER6MUJ6clhWdWg4clovdUFZcEg3SHBKTnpVPWWMMx1Dwj4CYAUSrQEIDRKoAQocQzQxcDFnL0hxd3hnTXJxV1ZYanJvcFdzWTZ3PRIkNmE3NDYyNjItNzk1Ni00MjI3LWI5ZjQtOTRmOWY0MWE3ZDU5GAAgACgAMP3Ww92PMzjP4b7KjTNAz+G+yo0zShw0T3VmMXE3Wk55ZkdkaC9nWi9FdS9xWHl1Ums9Wh8iHfsvM3ozTGdyNkc1cjBZL0g2WTM5Y29uVXlrdFE9ZYVn7Q/CPgJgBRKOAQgDEokBChxuamdEdTg4ZUNydlhwODZwRDdmSEdjcUZwODg9EiRhYzRjYWFmYS03YWMyLTUyNGMtYTZhZS1jNGJmY2E2ZTc2MTAYACAAKAAw/ZrFrN4yOPefxazeMkD3n8Ws3jJKHHl6TkIwMWNuNTRBN2NSVTB1VCsvUGdtVHRVbz1aAGUAAAAAwj4CYAAwADgA",
+   "version": 1
+}

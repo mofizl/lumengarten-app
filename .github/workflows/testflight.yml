@@ -7,9 +7,6 @@ on:
         description: 'Build version (e.g., 1.0.0+1)'
         required: true
         default: '1.0.0+1'
-  push:
-    branches: [ master ]
-    paths: [ '.trigger-testflight' ]
       release_notes:
         description: 'Release notes for TestFlight'
         required: false
@@ -19,6 +16,9 @@ on:
         type: boolean
         required: false
         default: false
+  push:
+    branches: [ master ]
+    paths: [ '.trigger-testflight' ]
 
 jobs:
   deploy-testflight:
@@ -31,13 +31,13 @@ jobs:
       
     - name: Select Xcode version
       run: |
-        sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+        sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer
         xcodebuild -version
         
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.24.3'
+        flutter-version: '3.35.2'
         cache: true
         cache-key: 'flutter-:os:-:channel:-:version:-:arch:-:hash:'
         cache-path: '${{ runner.tool_cache }}/flutter/:channel:-:version:-:arch:'
@@ -123,6 +123,13 @@ jobs:
         IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
         KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
       run: |
+        # Validate environment variables first
+        if [[ -z "$IOS_CERTIFICATE_BASE64" || -z "$IOS_CERTIFICATE_PASSWORD" || -z "$IOS_PROVISIONING_PROFILE_BASE64" || -z "$KEYCHAIN_PASSWORD" ]]; then
+          echo "❌ Missing required secrets. Please ensure all iOS signing secrets are configured."
+          echo "Required: IOS_CERTIFICATE_BASE64, IOS_CERTIFICATE_PASSWORD, IOS_PROVISIONING_PROFILE_BASE64, KEYCHAIN_PASSWORD"
+          exit 1
+        fi
+        
         # Create certificate and provisioning profile files
         echo "$IOS_CERTIFICATE_BASE64" | base64 --decode > certificate.p12
         echo "$IOS_PROVISIONING_PROFILE_BASE64" | base64 --decode > profile.mobileprovision
@@ -185,7 +192,7 @@ jobs:
         
     - name: Build iOS for App Store
       run: |
-        export IPHONEOS_DEPLOYMENT_TARGET=12.0
+        export IPHONEOS_DEPLOYMENT_TARGET=16.0
         flutter build ios --release --no-codesign
         
     - name: Archive iOS App
